@@ -219,6 +219,18 @@ describe('MicrodataRdfParser', () => {
           ]);
       });
 
+      it('an itemscope with itemprop without value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop"></span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '""'),
+          ]);
+      });
+
       it('an itemscope with space-separated itemprops', async() => {
         expect(await parse(parser, `<html>
 <head></head>
