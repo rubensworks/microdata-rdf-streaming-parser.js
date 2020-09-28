@@ -119,7 +119,8 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     if (changedItemScope) {
       this.itemScopeStack.push(itemScope);
     } else {
-      this.itemScopeStack.push();
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      this.itemScopeStack.push(undefined);
     }
   }
 

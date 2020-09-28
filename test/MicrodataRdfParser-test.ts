@@ -126,6 +126,20 @@ describe('MicrodataRdfParser', () => {
           .toBeRdfIsomorphic([]);
       });
 
+      it('a document without item scopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span>
+        <span itemprop="http://example.org/prop1">abc</span>
+        <span itemprop="http://example.org/prop2">def</span>
+        <span itemprop="http://example.org/prop3">ghi</span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([]);
+      });
+
       it('an itemscope with itemtype', async() => {
         expect(await parse(parser, `<html>
 <head></head>
