@@ -58,5 +58,31 @@ describe('Util', () => {
           .toEqualRdfTerm(DF.namedNode('http://example.org/abc'));
       });
     });
+
+    describe('#deriveVocab', () => {
+      it('should remove the hash for an empty registry', async() => {
+        expect(util.deriveVocab('http://ex.org/a/b/c#xyz', {}))
+          .toEqual('http://ex.org/a/b/c');
+      });
+
+      it('should remove the last path segment for an empty registry', async() => {
+        expect(util.deriveVocab('http://ex.org/a/b/c', {}))
+          .toEqual('http://ex.org/a/b/');
+        expect(util.deriveVocab('http://ex.org/a/b/c/', {}))
+          .toEqual('http://ex.org/a/b/c/');
+      });
+
+      it('should reuse prefixes ending in a slash', async() => {
+        expect(util.deriveVocab('http://ex.org/a/b/c#xyz', {
+          'http://ex.org/': {},
+        })).toEqual('http://ex.org/');
+      });
+
+      it('should reuse prefixes not ending in a slash, and append a fragment', async() => {
+        expect(util.deriveVocab('http://ex.org/value/b/c#xyz', {
+          'http://ex.org/value': {},
+        })).toEqual('http://ex.org/value#');
+      });
+    });
   });
 });

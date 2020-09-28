@@ -253,7 +253,7 @@ describe('MicrodataRdfParser', () => {
 </html>`))
           .toBeRdfIsomorphic([
             quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
-            quad('_:b0', 'http://example.org/Type#prop', '"abc"'),
+            quad('_:b0', 'http://example.org/prop', '"abc"'),
           ]);
       });
 
@@ -276,7 +276,7 @@ describe('MicrodataRdfParser', () => {
 </html>`))
           .toBeRdfIsomorphic([
             quad('http://example.org/id', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
-            quad('http://example.org/id', 'http://example.org/Type#prop', '"abc"'),
+            quad('http://example.org/id', 'http://example.org/prop', '"abc"'),
           ]);
       });
 
@@ -309,6 +309,19 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://example.org/prop1', '"abc"'),
             quad('_:b0', 'http://example.org/prop2', '"def"'),
             quad('_:b0', 'http://example.org/prop3', '"ghi"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with relative URL for hcard', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://microformats.org/profile/hcard"><span itemprop="prop">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://microformats.org/profile/hcard'),
+            quad('_:b0', 'http://microformats.org/profile/hcard#prop', '"abc"'),
           ]);
       });
     });

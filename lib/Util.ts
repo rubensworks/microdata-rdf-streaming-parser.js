@@ -2,6 +2,7 @@ import { DataFactory } from 'rdf-data-factory';
 import type * as RDF from 'rdf-js';
 import { resolve } from 'relative-to-absolute-iri';
 import type { IItemScope } from './IItemScope';
+import type { IVocabRegistry } from './IVocabRegistry';
 
 /**
  * A collection of utility functions.
@@ -65,7 +66,7 @@ export class Util {
   public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode | undefined {
     if (!Util.isValidIri(iri)) {
       if (itemScope.vocab) {
-        iri = `${itemScope.vocab}#${iri}`;
+        iri = `${itemScope.vocab}${iri}`;
       } else {
         return;
       }
@@ -81,5 +82,37 @@ export class Util {
    */
   public createLiteral(literal: string, activeTag: IItemScope): RDF.Literal {
     return this.dataFactory.literal(literal);
+  }
+
+  /**
+   * Determine the vocab IRI from a given type IRI.
+   * @link https://w3c.github.io/microdata-rdf/#property-uri-generation
+   * @param typeIri A type IRI.
+   * @param vocabRegistry The active vocabulary registry.
+   */
+  public deriveVocab(typeIri: string, vocabRegistry: IVocabRegistry): string {
+    let vocab: string | undefined;
+
+    // First check if we find a prefix in the vocab registry
+    for (const uriPrefix in vocabRegistry) {
+      if (typeIri.startsWith(uriPrefix)) {
+        vocab = uriPrefix;
+        // Append fragment if prefix does not end with a slash
+        if (!vocab.endsWith('/')) {
+          vocab += '#';
+        }
+        break;
+      }
+    }
+    // If no match was found, remove the last path segment from the URI
+    if (!vocab) {
+      const hashPos = typeIri.indexOf('#');
+      if (hashPos > 0) {
+        vocab = typeIri.slice(0, hashPos);
+      } else {
+        vocab = resolve('.', typeIri);
+      }
+    }
+    return vocab;
   }
 }

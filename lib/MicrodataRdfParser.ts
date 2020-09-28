@@ -5,7 +5,9 @@ import { Parser as HtmlParser } from 'htmlparser2';
 import type * as RDF from 'rdf-js';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import type { IItemScope } from './IItemScope';
+import type { IVocabRegistry } from './IVocabRegistry';
 import { Util } from './Util';
+import * as VOCAB_REGISTRY_DEFAULT from './vocab-registry-default.json';
 import EventEmitter = NodeJS.EventEmitter;
 
 /**
@@ -17,6 +19,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   private readonly defaultGraph?: RDF.Quad_Graph;
   private readonly parser: HtmlParser;
   private readonly htmlParseListener?: IHtmlParseListener;
+  private readonly vocabRegistry: IVocabRegistry;
 
   private readonly itemScopeStack: (IItemScope | undefined)[] = [];
 
@@ -28,6 +31,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     this.util = new Util(options.dataFactory, options.baseIRI);
     this.defaultGraph = options.defaultGraph || this.util.dataFactory.defaultGraph();
     this.htmlParseListener = options.htmlParseListener;
+    this.vocabRegistry = options.vocabRegistry || VOCAB_REGISTRY_DEFAULT;
 
     this.parser = this.initializeParser(!!options.xmlMode);
   }
@@ -89,8 +93,8 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         for (const type of this.util.createVocabIris(attributes.itemtype, itemScope)) {
           // 4. Vocab identifier is the first valid item
           if (!itemScope.vocab) {
-            // 5. Modify vocab based on registry (TODO)
-            itemScope.vocab = type.value;
+            // 5. Modify vocab based on registry
+            itemScope.vocab = this.util.deriveVocab(type.value, this.vocabRegistry);
           }
 
           // Emit item type
@@ -240,4 +244,8 @@ export interface IMicrodataRdfParserOptions {
    * If the parser should assume strict X(HT)ML documents.
    */
   xmlMode?: boolean;
+  /**
+   * A vocabulary registry to define specific behaviour for given URI prefixes.
+   */
+  vocabRegistry?: IVocabRegistry;
 }
