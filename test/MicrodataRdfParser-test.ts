@@ -2,6 +2,7 @@ import { DataFactory } from 'rdf-data-factory';
 import 'jest-rdf';
 import type * as RDF from 'rdf-js';
 import { MicrodataRdfParser } from '../lib/MicrodataRdfParser';
+import { PassThrough } from 'stream';
 const arrayifyStream = require('arrayify-stream');
 const quad = require('rdf-quad');
 const streamifyString = require('streamify-string');
@@ -227,13 +228,41 @@ describe('MicrodataRdfParser', () => {
   });
 
   describe('#import', () => {
-    let parser;
+    let parser: MicrodataRdfParser;
 
     beforeAll(() => {
       parser = new MicrodataRdfParser({ baseIRI: 'http://example.org/' });
     });
 
-    // TODO
+    it('should parse a stream', async() => {
+      const stream = streamifyString(`<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type"></span>
+</body>
+</html>`);
+      expect(await arrayifyStream(parser.import(stream))).toBeRdfIsomorphic([
+        quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+      ]);
+    });
+
+    it('should parse another stream', async() => {
+      const stream = streamifyString(`<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type"></span>
+</body>
+</html>`);
+      expect(await arrayifyStream(parser.import(stream))).toBeRdfIsomorphic([
+        quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+      ]);
+    });
+
+    it('should forward error events', async() => {
+      const stream = new PassThrough();
+      stream._read = () => stream.emit('error', new Error('my error'));
+      await expect(arrayifyStream(parser.import(stream))).rejects.toThrow(new Error('my error'));
+    });
   });
 });
 
