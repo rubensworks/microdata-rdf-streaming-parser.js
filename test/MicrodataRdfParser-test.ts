@@ -507,6 +507,78 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
           ]);
       });
+
+      it('an itemscope with itemprop and integer data', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><data itemprop="http://example.org/prop" value="123"></data></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"123"^^http://www.w3.org/2001/XMLSchema#integer'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and double data', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><data itemprop="http://example.org/prop" value="123.321"></data></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"123.321"^^http://www.w3.org/2001/XMLSchema#double'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and string data', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><data itemprop="http://example.org/prop" value="not 123"></data></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"not 123"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and integer meter', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><meter itemprop="http://example.org/prop" value="123"></meter></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"123"^^http://www.w3.org/2001/XMLSchema#integer'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and double meter', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><meter itemprop="http://example.org/prop" value="123.321"></meter></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"123.321"^^http://www.w3.org/2001/XMLSchema#double'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and string meter', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><meter itemprop="http://example.org/prop" value="not 123"></meter></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"not 123"'),
+          ]);
+      });
     });
   });
 

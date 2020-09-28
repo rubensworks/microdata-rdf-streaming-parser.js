@@ -8,6 +8,7 @@ import type { IItemScope } from './IItemScope';
 import type { IVocabRegistry } from './IVocabRegistry';
 import type { IItemPropertyHandler } from './propertyhandler/IItemPropertyHandler';
 import { ItemPropertyHandlerContent } from './propertyhandler/ItemPropertyHandlerContent';
+import { ItemPropertyHandlerNumber } from './propertyhandler/ItemPropertyHandlerNumber';
 import { ItemPropertyHandlerUrl } from './propertyhandler/ItemPropertyHandlerUrl';
 import { Util } from './Util';
 import * as VOCAB_REGISTRY_DEFAULT from './vocab-registry-default.json';
@@ -30,6 +31,8 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     new ItemPropertyHandlerUrl('source', 'src'),
     new ItemPropertyHandlerUrl('track', 'src'),
     new ItemPropertyHandlerUrl('video', 'src'),
+    new ItemPropertyHandlerNumber('data', 'value'),
+    new ItemPropertyHandlerNumber('meter', 'value'),
   ];
 
   private readonly options: IMicrodataRdfParserOptions;
