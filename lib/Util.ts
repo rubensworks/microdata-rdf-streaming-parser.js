@@ -42,4 +42,18 @@ export class Util {
     }
     return this.dataFactory.namedNode(resolve(href, this.baseIRI.value));
   }
+
+  /**
+   * Create vocab terms for the given terms attribute.
+   * @param {string} terms An attribute value.
+   * @return {Term[]} The IRI terms.
+   */
+  public createVocabIris(terms: string): RDF.NamedNode[] {
+    return terms.split(/\s+/u)
+      .map(property => this.createIri(property));
+  }
+
+  public createIri(iri: string): RDF.NamedNode {
+    return this.dataFactory.namedNode(iri);
+  }
 }

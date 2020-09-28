@@ -1,6 +1,6 @@
 import { DataFactory } from 'rdf-data-factory';
 import 'jest-rdf';
-
+import type * as RDF from 'rdf-js';
 import { MicrodataRdfParser } from '../lib/MicrodataRdfParser';
 const arrayifyStream = require('arrayify-stream');
 const quad = require('rdf-quad');
@@ -62,10 +62,84 @@ describe('MicrodataRdfParser', () => {
   });
 
   describe('a default instance', () => {
-    let parser;
+    let parser: MicrodataRdfParser;
 
     beforeEach(() => {
       parser = new MicrodataRdfParser({ baseIRI: 'http://example.org/' });
+    });
+
+    describe('should parse', () => {
+      it('an empty document', async() => {
+        expect(await parse(parser, ``))
+          .toBeRdfIsomorphic([]);
+      });
+
+      it('an itemscope with itemtype', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+          ]);
+      });
+
+      it('an itemscope with itemtype and itemid', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span
+    itemscope
+    itemtype="http://example.org/Type"
+    itemid="http://example.org/id"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/id', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+          ]);
+      });
+
+      it('an itemscope with itemtype containing multiple spaced values', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type1 http://example.org/Type2"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type1'),
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type2'),
+          ]);
+      });
+
+      it('an itemscope with itemtype containing multiple tabbed values', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type1\thttp://example.org/Type2"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type1'),
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type2'),
+          ]);
+      });
+
+      it('an itemscope with itemtype containing multiple newlined values', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type1
+    http://example.org/Type2"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type1'),
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type2'),
+          ]);
+      });
     });
   });
 
@@ -79,3 +153,7 @@ describe('MicrodataRdfParser', () => {
     // TODO
   });
 });
+
+function parse(parser: MicrodataRdfParser, input: string): Promise<RDF.Quad[]> {
+  return arrayifyStream(streamifyString(input).pipe(parser));
+}
