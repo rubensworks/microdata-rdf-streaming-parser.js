@@ -55,6 +55,13 @@ export class Util {
       .filter(term => term !== undefined);
   }
 
+  /**
+   * Create a named node for the given term, which can be relative to the current vocab.
+   * Can be undefined if the term is a relative IRI, and no vocab is defined.
+   * @param {string} term A term string.
+   * @param {IItemScope} itemScope The current item scope.
+   * @return {Term} An RDF term or undefined.
+   */
   public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode | undefined {
     if (!Util.isValidIri(iri)) {
       if (itemScope.vocab) {

@@ -230,6 +230,16 @@ describe('MicrodataRdfParser', () => {
           ]);
       });
 
+      it('an itemscope with itemprop with relative URL without vocab', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="prop">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([]);
+      });
+
       it('an itemscope with itemprop with relative URL and itemid', async() => {
         expect(await parse(parser, `<html>
 <head></head>
