@@ -52,18 +52,19 @@ export class Util {
    */
   public createVocabIris(terms: string, itemScope: IItemScope): RDF.NamedNode[] {
     return terms.split(/\s+/u)
-      .map(property => this.createIri(property, itemScope));
+      .map(property => this.createIri(property, itemScope, true));
   }
 
   /**
    * Create a named node for the given term, which can be relative to the current vocab, or document base as fallback.
    * @param {string} term A term string.
    * @param {IItemScope} itemScope The current item scope.
+   * @param {boolean} useVocab If the current vocab value can be used.
    * @return {Term} An RDF term.
    */
-  public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode {
+  public createIri(iri: string, itemScope: IItemScope, useVocab: boolean): RDF.NamedNode {
     if (!Util.isValidIri(iri)) {
-      iri = `${itemScope.vocab || `${this.baseIRI.value}#`}${iri}`;
+      iri = `${useVocab && itemScope.vocab || `${this.baseIRI.value}#`}${iri}`;
     }
     return this.dataFactory.namedNode(iri);
   }

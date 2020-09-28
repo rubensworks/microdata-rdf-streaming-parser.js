@@ -350,6 +350,163 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://example.org/prop', '"def"'),
           ]);
       });
+
+      it('an itemscope with itemprop and a', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><a itemprop="http://example.org/prop" href="http://ex.org/link"></a></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and a with relative value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://schema.org/"><a itemprop="http://example.org/prop" href="link"></a></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/'),
+            quad('_:b0', 'http://example.org/prop', 'http://example.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and a and missing href', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><a itemprop="http://example.org/prop"></a></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '""'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and area', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><area itemprop="http://example.org/prop" href="http://ex.org/link"></area></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and audio', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><audio itemprop="http://example.org/prop" src="http://ex.org/link"></audio></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and embed', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><embed itemprop="http://example.org/prop" src="http://ex.org/link"></embed></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and iframe', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><iframe itemprop="http://example.org/prop" src="http://ex.org/link"></iframe></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and img', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><img itemprop="http://example.org/prop" src="http://ex.org/link"></img></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and link', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><link itemprop="http://example.org/prop" href="http://ex.org/link"></link></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and object', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><object itemprop="http://example.org/prop" data="http://ex.org/link"></object></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and source', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><source itemprop="http://example.org/prop" src="http://ex.org/link"></source></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and track', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><track itemprop="http://example.org/prop" src="http://ex.org/link"></track></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and video', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><video itemprop="http://example.org/prop" src="http://ex.org/link"></video></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', 'http://ex.org/link'),
+          ]);
+      });
     });
   });
 

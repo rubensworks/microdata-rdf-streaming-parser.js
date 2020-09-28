@@ -6,6 +6,9 @@ import type * as RDF from 'rdf-js';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import type { IItemScope } from './IItemScope';
 import type { IVocabRegistry } from './IVocabRegistry';
+import type { IItemPropertyHandler } from './propertyhandler/IItemPropertyHandler';
+import { ItemPropertyHandlerContent } from './propertyhandler/ItemPropertyHandlerContent';
+import { ItemPropertyHandlerUrl } from './propertyhandler/ItemPropertyHandlerUrl';
 import { Util } from './Util';
 import * as VOCAB_REGISTRY_DEFAULT from './vocab-registry-default.json';
 import EventEmitter = NodeJS.EventEmitter;
@@ -14,6 +17,21 @@ import EventEmitter = NodeJS.EventEmitter;
  * A stream transformer that parses Microdata (text) streams to an {@link RDF.Stream}.
  */
 export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitter, RDF.Stream> {
+  private static readonly ITEM_PROPERTY_HANDLERS: IItemPropertyHandler[] = [
+    new ItemPropertyHandlerContent(),
+    new ItemPropertyHandlerUrl('a', 'href'),
+    new ItemPropertyHandlerUrl('area', 'href'),
+    new ItemPropertyHandlerUrl('audio', 'src'),
+    new ItemPropertyHandlerUrl('embed', 'src'),
+    new ItemPropertyHandlerUrl('iframe', 'src'),
+    new ItemPropertyHandlerUrl('img', 'src'),
+    new ItemPropertyHandlerUrl('link', 'href'),
+    new ItemPropertyHandlerUrl('object', 'data'),
+    new ItemPropertyHandlerUrl('source', 'src'),
+    new ItemPropertyHandlerUrl('track', 'src'),
+    new ItemPropertyHandlerUrl('video', 'src'),
+  ];
+
   private readonly options: IMicrodataRdfParserOptions;
   private readonly util: Util;
   private readonly defaultGraph?: RDF.Quad_Graph;
@@ -117,13 +135,15 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         // Set predicates in the scope, and handle them on tag close.
         itemScope.predicates = this.util.createVocabIris(attributes.itemprop, itemScope);
 
-        // If we have a content attribute, forcefully use that as predicate value.
-        if ('content' in attributes) {
-          const object = this.util.createLiteral(attributes.content, itemScope);
-          this.emitPredicateTriples(itemScope, itemScope.predicates, object);
+        // Check if a property handler that applies, forcefully use that as predicate value.
+        for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
+          if (handler.canHandle(name, attributes)) {
+            const object = handler.getObject(attributes, this.util, itemScope);
+            this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> itemScope.predicates, object);
 
-          // Finalize the predicates, so text values do not apply to them.
-          delete itemScope.predicates;
+            // Finalize the predicates, so text values do not apply to them.
+            delete itemScope.predicates;
+          }
         }
       }
     }
@@ -148,7 +168,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
-  protected emitPredicateTriples(itemScope: IItemScope, predicates: RDF.NamedNode[], object: RDF.Literal): void {
+  protected emitPredicateTriples(itemScope: IItemScope, predicates: RDF.NamedNode[], object: RDF.Quad_Object): void {
     for (const predicate of predicates) {
       this.emitTriple(itemScope.subject, predicate, object);
     }

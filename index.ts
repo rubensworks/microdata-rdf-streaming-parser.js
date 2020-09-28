@@ -1,3 +1,6 @@
+export * from './lib/propertyhandler/IItemPropertyHandler';
+export * from './lib/propertyhandler/ItemPropertyHandlerContent';
+export * from './lib/propertyhandler/ItemPropertyHandlerUrl';
 export * from './lib/IHtmlParseListener';
 export * from './lib/IItemScope';
 export * from './lib/IVocabRegistry';
