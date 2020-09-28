@@ -1,6 +1,7 @@
 import { DataFactory } from 'rdf-data-factory';
 import type * as RDF from 'rdf-js';
 import { resolve } from 'relative-to-absolute-iri';
+import type { IItemScope } from './IItemScope';
 
 /**
  * A collection of utility functions.
@@ -48,12 +49,30 @@ export class Util {
    * @param {string} terms An attribute value.
    * @return {Term[]} The IRI terms.
    */
-  public createVocabIris(terms: string): RDF.NamedNode[] {
-    return terms.split(/\s+/u)
-      .map(property => this.createIri(property));
+  public createVocabIris(terms: string, itemScope: IItemScope): RDF.NamedNode[] {
+    return <RDF.NamedNode[]> terms.split(/\s+/u)
+      .map(property => this.createIri(property, itemScope))
+      .filter(term => term !== undefined);
   }
 
-  public createIri(iri: string): RDF.NamedNode {
+  public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode | undefined {
+    if (!Util.isValidIri(iri)) {
+      if (itemScope.vocab) {
+        iri = `${itemScope.vocab}#${iri}`;
+      } else {
+        return;
+      }
+    }
     return this.dataFactory.namedNode(iri);
+  }
+
+  /**
+   * Create a new literal node.
+   * @param {string} literal The literal value.
+   * @param {IActiveTag} activeTag The current active tag.
+   * @return {Literal} A new literal node.
+   */
+  public createLiteral(literal: string, activeTag: IItemScope): RDF.Literal {
+    return this.dataFactory.literal(literal);
   }
 }

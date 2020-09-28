@@ -56,31 +56,44 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     callback();
   }
 
+  protected getParentItemScope(): IItemScope | undefined {
+    let parentTagI: number = this.itemScopeStack.length - 1;
+    while (parentTagI > 0 && !this.itemScopeStack[parentTagI]) {
+      parentTagI--;
+    }
+    return this.itemScopeStack[parentTagI];
+  }
+
   public onTagOpen(name: string, attributes: {[s: string]: string}): void {
-    // Determine the current item scope
+    // Processing steps based on https://w3c.github.io/microdata-rdf/#rdf-conversion-algorithm
+
+    // 1. Determine the current item scope
     let itemScope: IItemScope | undefined;
     let changedItemScope = false;
     if ('itemscope' in attributes) {
       // Create a new item scope
       const subject: RDF.Quad_Subject = 'itemid' in attributes && Util.isValidIri(attributes.itemid) ?
-        this.util.createIri(attributes.itemid) :
+        this.util.dataFactory.namedNode(attributes.itemid) :
         this.util.dataFactory.blankNode();
       itemScope = { subject };
       changedItemScope = true;
     } else {
       // Determine the parent item scope
-      let parentTagI: number = this.itemScopeStack.length - 1;
-      while (parentTagI > 0 && !this.itemScopeStack[parentTagI]) {
-        parentTagI--;
-      }
-      itemScope = this.itemScopeStack[parentTagI];
+      itemScope = this.getParentItemScope();
     }
 
     // If we have a valid item scope, process the current node
     if (itemScope) {
-      // Handle item type
+      // 3. Handle item types
       if ('itemtype' in attributes) {
-        for (const type of this.util.createVocabIris(attributes.itemtype)) {
+        for (const type of this.util.createVocabIris(attributes.itemtype, itemScope)) {
+          // 4. Vocab identifier is the first valid item
+          if (!itemScope.vocab) {
+            // 5. Modify vocab based on registry (TODO)
+            itemScope.vocab = type.value;
+          }
+
+          // Emit item type
           this.emitTriple(
             itemScope.subject,
             this.util.dataFactory.namedNode(`${Util.RDF}type`),
@@ -88,9 +101,21 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
           );
         }
       }
+
+      // 6. Handle item properties
+      if ('itemprop' in attributes) {
+        itemScope = {
+          ...itemScope,
+          text: undefined,
+        };
+        changedItemScope = true;
+
+        // Set predicates in the scope, and handle them on tag close.
+        itemScope.predicates = this.util.createVocabIris(attributes.itemprop, itemScope);
+      }
     }
 
-    // Push any changes to the item scope to the stack
+    // 2. Push any changes to the item scope to the stack
     if (changedItemScope) {
       this.itemScopeStack.push(itemScope);
     } else {
@@ -99,10 +124,29 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   public onText(data: string): void {
-    // TODO
+    // Save the text inside the item scope
+    const itemScope = this.getParentItemScope();
+    if (itemScope) {
+      if (!itemScope.text) {
+        itemScope.text = [];
+      }
+      itemScope.text.push(data);
+    }
   }
 
   public onTagClose(): void {
+    // Emit all triples that were determined in the active tag
+    const itemScope = this.getParentItemScope();
+    if (itemScope) {
+      if (itemScope.predicates) {
+        const textSegments: string[] = itemScope.text || [];
+        const object = this.util.createLiteral(textSegments.join(''), itemScope);
+        for (const predicate of itemScope.predicates) {
+          this.emitTriple(itemScope.subject, predicate, object);
+        }
+      }
+    }
+
     // Remove the active tag from the stack
     this.itemScopeStack.pop();
   }

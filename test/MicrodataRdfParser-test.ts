@@ -140,6 +140,89 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type2'),
           ]);
       });
+
+      it('an itemscope with itemprop', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"abc"'),
+          ]);
+      });
+
+      it('an itemscope with space-separated itemprops', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop1 http://example.org/prop2">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '"abc"'),
+            quad('_:b0', 'http://example.org/prop2', '"abc"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with relative URL', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type"><span itemprop="prop">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+            quad('_:b0', 'http://example.org/Type#prop', '"abc"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with relative URL and itemid', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Type" itemid="http://example.org/id"><span itemprop="prop">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/id', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+            quad('http://example.org/id', 'http://example.org/Type#prop', '"abc"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and newlines surrounding the prop tag', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop">abc</span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"abc"'),
+          ]);
+      });
+
+      it('an itemscope with multiple itemprops', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1">abc</span>
+        <span itemprop="http://example.org/prop2">def</span>
+        <span itemprop="http://example.org/prop3">ghi</span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '"abc"'),
+            quad('_:b0', 'http://example.org/prop2', '"def"'),
+            quad('_:b0', 'http://example.org/prop3', '"ghi"'),
+          ]);
+      });
     });
   });
 
