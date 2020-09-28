@@ -9,6 +9,7 @@ import type { IVocabRegistry } from './IVocabRegistry';
 import type { IItemPropertyHandler } from './propertyhandler/IItemPropertyHandler';
 import { ItemPropertyHandlerContent } from './propertyhandler/ItemPropertyHandlerContent';
 import { ItemPropertyHandlerNumber } from './propertyhandler/ItemPropertyHandlerNumber';
+import { ItemPropertyHandlerTime } from './propertyhandler/ItemPropertyHandlerTime';
 import { ItemPropertyHandlerUrl } from './propertyhandler/ItemPropertyHandlerUrl';
 import { Util } from './Util';
 import * as VOCAB_REGISTRY_DEFAULT from './vocab-registry-default.json';
@@ -33,6 +34,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     new ItemPropertyHandlerUrl('video', 'src'),
     new ItemPropertyHandlerNumber('data', 'value'),
     new ItemPropertyHandlerNumber('meter', 'value'),
+    new ItemPropertyHandlerTime(),
   ];
 
   private readonly options: IMicrodataRdfParserOptions;
@@ -125,6 +127,14 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
             type,
           );
         }
+      }
+
+      // Save language in item scope
+      if ('lang' in attributes) {
+        itemScope.language = attributes.lang;
+      }
+      if ('xml:lang' in attributes) {
+        itemScope.language = attributes['xml:lang'];
       }
 
       // 6. Handle item properties

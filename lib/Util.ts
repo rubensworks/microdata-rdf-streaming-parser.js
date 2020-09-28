@@ -76,7 +76,7 @@ export class Util {
    * @return {Literal} A new literal node.
    */
   public createLiteral(literal: string, activeTag: IItemScope): RDF.Literal {
-    return this.dataFactory.literal(literal);
+    return this.dataFactory.literal(literal, activeTag.language);
   }
 
   /**

@@ -579,6 +579,270 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://example.org/prop', '"not 123"'),
           ]);
       });
+
+      it('an itemscope with time and time value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="00:00:00Z"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"00:00:00Z"^^http://www.w3.org/2001/XMLSchema#time'),
+          ]);
+      });
+
+      it('an itemscope with time and no datetime value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop">a</time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"a"'),
+          ]);
+      });
+
+      it('an itemscope with time and datetime value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="2012-03-18T00:00:00"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"2012-03-18T00:00:00"^^http://www.w3.org/2001/XMLSchema#dateTime'),
+          ]);
+      });
+
+      it('an itemscope with time and date value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="2012-03-18"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"2012-03-18"^^http://www.w3.org/2001/XMLSchema#date'),
+          ]);
+      });
+
+      it('an itemscope with time and full duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P2Y6M5DT12H35M30S"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P2Y6M5DT12H35M30S"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and day and hour duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P1DT2H"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P1DT2H"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and month duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P20M"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P20M"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and minute duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="PT20M"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"PT20M"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and duration with optional 0s value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P0Y20M0D"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P0Y20M0D"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and 0 year duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P0Y"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P0Y"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and minus 60 days duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="-P60D"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"-P60D"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and decimal seconds duration value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="PT1M30.5S"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"PT1M30.5S"^^http://www.w3.org/2001/XMLSchema#duration'),
+          ]);
+      });
+
+      it('an itemscope with time and invalid durations without T', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P1M30.5S"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P1M30.5S"'),
+          ]);
+      });
+
+      it('an itemscope with time and invalid durations with unknown character', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><time itemprop="http://example.org/prop" datetime="P2X6M5DT12H35M30S"></time></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"P2X6M5DT12H35M30S"'),
+          ]);
+      });
+
+      it('an itemscope+lang with itemprop with content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope lang="en"><span itemprop="http://example.org/prop" content="a">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"a"@en'),
+          ]);
+      });
+
+      it('an itemscope+xml:lang with itemprop with content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope xml:lang="en"><span itemprop="http://example.org/prop" content="a">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"a"@en'),
+          ]);
+      });
+
+      it('an itemscope with itemprop+lang with content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span lang="en" itemprop="http://example.org/prop" content="a">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"a"@en'),
+          ]);
+      });
+
+      it('an itemscope with itemprop+xml:lang with content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span xml:lang="en" itemprop="http://example.org/prop" content="a">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"a"@en'),
+          ]);
+      });
+
+      it('an itemscope+lang with itemprop with value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope lang="en"><span itemprop="http://example.org/prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"b"@en'),
+          ]);
+      });
+
+      it('an itemscope+xml:lang with itemprop with value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope xml:lang="en"><span itemprop="http://example.org/prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"b"@en'),
+          ]);
+      });
+
+      it('an itemscope with itemprop+lang with value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span lang="en" itemprop="http://example.org/prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"b"@en'),
+          ]);
+      });
+
+      it('an itemscope with itemprop+xml:lang with value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span xml:lang="en" itemprop="http://example.org/prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"b"@en'),
+          ]);
+      });
     });
   });
 

@@ -6,6 +6,7 @@ import type * as RDF from 'rdf-js';
 export interface IItemScope {
   subject: RDF.NamedNode | RDF.BlankNode;
   vocab?: string;
+  language?: string;
   predicates?: RDF.NamedNode[];
   objects?: RDF.Term[][];
   text?: string[];
