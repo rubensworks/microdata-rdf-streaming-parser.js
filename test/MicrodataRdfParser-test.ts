@@ -324,6 +324,30 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://microformats.org/profile/hcard#prop', '"abc"'),
           ]);
       });
+
+      it('an itemscope with itemprop and content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop" content="def"></span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"def"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop and content, and ignores text node values', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop" content="def">abc</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"def"'),
+          ]);
+      });
     });
   });
 

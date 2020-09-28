@@ -116,6 +116,15 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
 
         // Set predicates in the scope, and handle them on tag close.
         itemScope.predicates = this.util.createVocabIris(attributes.itemprop, itemScope);
+
+        // If we have a content attribute, forcefully use that as predicate value.
+        if ('content' in attributes) {
+          const object = this.util.createLiteral(attributes.content, itemScope);
+          this.emitPredicateTriples(itemScope, itemScope.predicates, object);
+
+          // Finalize the predicates, so text values do not apply to them.
+          delete itemScope.predicates;
+        }
       }
     }
 
@@ -139,6 +148,12 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
+  protected emitPredicateTriples(itemScope: IItemScope, predicates: RDF.NamedNode[], object: RDF.Literal): void {
+    for (const predicate of predicates) {
+      this.emitTriple(itemScope.subject, predicate, object);
+    }
+  }
+
   public onTagClose(): void {
     // Emit all triples that were determined in the active tag
     const itemScope = this.getParentItemScope();
@@ -146,9 +161,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       if (itemScope.predicates) {
         const textSegments: string[] = itemScope.text || [];
         const object = this.util.createLiteral(textSegments.join(''), itemScope);
-        for (const predicate of itemScope.predicates) {
-          this.emitTriple(itemScope.subject, predicate, object);
-        }
+        this.emitPredicateTriples(itemScope, itemScope.predicates, object);
       }
     }
 
