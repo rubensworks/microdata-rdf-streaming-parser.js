@@ -1,8 +1,9 @@
+import { PassThrough } from 'stream';
 import { DataFactory } from 'rdf-data-factory';
 import 'jest-rdf';
 import type * as RDF from 'rdf-js';
+import type { IHtmlParseListener } from '../lib/IHtmlParseListener';
 import { MicrodataRdfParser } from '../lib/MicrodataRdfParser';
-import { PassThrough } from 'stream';
 const arrayifyStream = require('arrayify-stream');
 const quad = require('rdf-quad');
 const streamifyString = require('streamify-string');
@@ -283,6 +284,75 @@ describe('MicrodataRdfParser', () => {
             quad('_:b0', 'http://example.org/prop2', '"def"'),
             quad('_:b0', 'http://example.org/prop3', '"ghi"'),
           ]);
+      });
+    });
+  });
+
+  describe('a default instance with an HTML listener', () => {
+    let parser: MicrodataRdfParser;
+    let htmlParseListener: IHtmlParseListener;
+
+    beforeEach(() => {
+      htmlParseListener = {
+        onEnd: jest.fn(),
+        onTagClose: jest.fn(),
+        onTagOpen: jest.fn(),
+        onText: jest.fn(),
+      };
+      parser = new MicrodataRdfParser({ baseIRI: 'http://example.org/', htmlParseListener });
+    });
+
+    describe('should parse', () => {
+      it('and call the HTML listener', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1">abc</span>
+        <span itemprop="http://example.org/prop2">def</span>
+        <span itemprop="http://example.org/prop3">ghi</span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '"abc"'),
+            quad('_:b0', 'http://example.org/prop2', '"def"'),
+            quad('_:b0', 'http://example.org/prop3', '"ghi"'),
+          ]);
+        expect(htmlParseListener.onTagOpen).toHaveBeenCalledTimes(7);
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(1, 'html', {});
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(2, 'head', {});
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(3, 'body', {});
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(4, 'span', {
+          itemscope: '',
+        });
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(5, 'span', {
+          itemprop: 'http://example.org/prop1',
+        });
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(6, 'span', {
+          itemprop: 'http://example.org/prop2',
+        });
+        expect(htmlParseListener.onTagOpen).toHaveBeenNthCalledWith(7, 'span', {
+          itemprop: 'http://example.org/prop3',
+        });
+
+        expect(htmlParseListener.onTagClose).toHaveBeenCalledTimes(7);
+
+        expect(htmlParseListener.onText).toHaveBeenCalledTimes(12);
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(1, '\n');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(2, '\n');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(3, '\n    ');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(4, '\n        ');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(5, 'abc');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(6, '\n        ');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(7, 'def');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(8, '\n        ');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(9, 'ghi');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(10, '\n    ');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(11, '\n');
+        expect(htmlParseListener.onText).toHaveBeenNthCalledWith(12, '\n');
+
+        expect(htmlParseListener.onEnd).toHaveBeenCalledTimes(1);
       });
     });
   });
