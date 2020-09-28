@@ -1,4 +1,7 @@
-import { PassThrough, Transform, TransformCallback } from 'stream';
+import type { TransformCallback } from 'stream';
+import { PassThrough, Transform } from 'stream';
+import type { DomHandler } from 'domhandler';
+import { Parser as HtmlParser } from 'htmlparser2';
 import type * as RDF from 'rdf-js';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import { Util } from './Util';
@@ -11,6 +14,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   private readonly options: IMicrodataRdfParserOptions;
   private readonly util: Util;
   private readonly defaultGraph?: RDF.Quad_Graph;
+  private readonly parser: HtmlParser;
   private readonly htmlParseListener?: IHtmlParseListener;
 
   public constructor(options?: IMicrodataRdfParserOptions) {
@@ -21,6 +25,8 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     this.util = new Util(options.dataFactory, options.baseIRI);
     this.defaultGraph = options.defaultGraph || this.util.dataFactory.defaultGraph();
     this.htmlParseListener = options.htmlParseListener;
+
+    this.parser = this.initializeParser(!!options.xmlMode);
   }
 
   /**
@@ -38,8 +44,81 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   public _transform(chunk: any, encoding: string, callback: TransformCallback): void {
-    // TODO
+    this.parser.write(chunk);
     callback();
+  }
+
+  public _flush(callback: TransformCallback): void {
+    this.parser.end();
+    callback();
+  }
+
+  public onTagOpen(name: string, attributes: {[s: string]: string}): void {
+    // TODO
+  }
+
+  public onText(data: string): void {
+    // TODO
+  }
+
+  public onTagClose(): void {
+    // TODO
+  }
+
+  public onEnd(): void {
+    // TODO
+  }
+
+  protected initializeParser(xmlMode: boolean): HtmlParser {
+    return new HtmlParser(
+      <DomHandler> <any> {
+        onclosetag: () => {
+          try {
+            this.onTagClose();
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onTagClose();
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        onend: () => {
+          try {
+            this.onEnd();
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onEnd();
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        onopentag: (name: string, attributes: {[s: string]: string}) => {
+          try {
+            this.onTagOpen(name, attributes);
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onTagOpen(name, attributes);
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        ontext: (data: string) => {
+          try {
+            this.onText(data);
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onText(data);
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+      },
+      {
+        decodeEntities: true,
+        recognizeSelfClosing: true,
+        xmlMode,
+      },
+    );
   }
 }
 
@@ -60,4 +139,8 @@ export interface IMicrodataRdfParserOptions {
    * An optional listener for the internal HTML parse events.
    */
   htmlParseListener?: IHtmlParseListener;
+  /**
+   * If the parser should assume strict X(HT)ML documents.
+   */
+  xmlMode?: boolean;
 }
