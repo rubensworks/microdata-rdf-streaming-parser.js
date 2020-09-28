@@ -51,25 +51,19 @@ export class Util {
    * @return {Term[]} The IRI terms.
    */
   public createVocabIris(terms: string, itemScope: IItemScope): RDF.NamedNode[] {
-    return <RDF.NamedNode[]> terms.split(/\s+/u)
-      .map(property => this.createIri(property, itemScope))
-      .filter(term => term !== undefined);
+    return terms.split(/\s+/u)
+      .map(property => this.createIri(property, itemScope));
   }
 
   /**
-   * Create a named node for the given term, which can be relative to the current vocab.
-   * Can be undefined if the term is a relative IRI, and no vocab is defined.
+   * Create a named node for the given term, which can be relative to the current vocab, or document base as fallback.
    * @param {string} term A term string.
    * @param {IItemScope} itemScope The current item scope.
-   * @return {Term} An RDF term or undefined.
+   * @return {Term} An RDF term.
    */
-  public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode | undefined {
+  public createIri(iri: string, itemScope: IItemScope): RDF.NamedNode {
     if (!Util.isValidIri(iri)) {
-      if (itemScope.vocab) {
-        iri = `${itemScope.vocab}${iri}`;
-      } else {
-        return;
-      }
+      iri = `${itemScope.vocab || `${this.baseIRI.value}#`}${iri}`;
     }
     return this.dataFactory.namedNode(iri);
   }

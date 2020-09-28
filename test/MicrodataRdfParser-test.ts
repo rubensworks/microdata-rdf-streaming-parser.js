@@ -67,7 +67,7 @@ describe('MicrodataRdfParser', () => {
     let parser: MicrodataRdfParser;
 
     beforeEach(() => {
-      parser = new MicrodataRdfParser({ baseIRI: 'http://example.org/' });
+      parser = new MicrodataRdfParser({ baseIRI: 'http://example.org/document.html' });
     });
 
     describe('should error', () => {
@@ -264,7 +264,9 @@ describe('MicrodataRdfParser', () => {
     <span itemscope><span itemprop="prop">abc</span></span>
 </body>
 </html>`))
-          .toBeRdfIsomorphic([]);
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/document.html#prop', '"abc"'),
+          ]);
       });
 
       it('an itemscope with itemprop with relative URL and itemid', async() => {
