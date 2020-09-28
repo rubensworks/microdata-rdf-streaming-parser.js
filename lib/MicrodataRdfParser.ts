@@ -1,4 +1,4 @@
-import { PassThrough, Transform } from 'stream';
+import { PassThrough, Transform, TransformCallback } from 'stream';
 import type * as RDF from 'rdf-js';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import { Util } from './Util';
@@ -35,6 +35,11 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     stream.on('end', () => output.push(null));
     const parsed = output.pipe(new MicrodataRdfParser(this.options));
     return parsed;
+  }
+
+  public _transform(chunk: any, encoding: string, callback: TransformCallback): void {
+    // TODO
+    callback();
   }
 }
 
