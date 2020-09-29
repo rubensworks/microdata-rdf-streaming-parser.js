@@ -45,6 +45,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   private readonly vocabRegistry: IVocabRegistry;
 
   private readonly itemScopeStack: (IItemScope | undefined)[] = [];
+  private readonly textBufferStack: (string[] | undefined)[] = [];
 
   public constructor(options?: IMicrodataRdfParserOptions) {
     super({ readableObjectMode: true });
@@ -83,30 +84,40 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     callback();
   }
 
-  protected getParentItemScope(): IItemScope | undefined {
-    let parentTagI: number = this.itemScopeStack.length - 1;
+  protected getItemScope(parent?: boolean): IItemScope | undefined {
+    let parentTagI: number = this.itemScopeStack.length - (parent ? 2 : 1);
     while (parentTagI > 0 && !this.itemScopeStack[parentTagI]) {
       parentTagI--;
     }
     return this.itemScopeStack[parentTagI];
   }
 
+  protected getDepth(): number {
+    return this.itemScopeStack.length;
+  }
+
   public onTagOpen(name: string, attributes: {[s: string]: string}): void {
+    // Ensure the text buffer stack is in line with the stack depth
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    this.textBufferStack.push(undefined);
     // Processing steps based on https://w3c.github.io/microdata-rdf/#rdf-conversion-algorithm
 
     // 1. Determine the current item scope
     let itemScope: IItemScope | undefined;
-    let changedItemScope = false;
     if ('itemscope' in attributes) {
       // Create a new item scope
       const subject: RDF.Quad_Subject = 'itemid' in attributes && Util.isValidIri(attributes.itemid) ?
         this.util.dataFactory.namedNode(attributes.itemid) :
         this.util.dataFactory.blankNode();
       itemScope = { subject };
-      changedItemScope = true;
+      // 2. Push any changes to the item scope to the stack
+      this.itemScopeStack.push(itemScope);
     } else {
       // Determine the parent item scope
-      itemScope = this.getParentItemScope();
+      itemScope = this.getItemScope();
+      // 2. Push any changes to the item scope to the stack
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      this.itemScopeStack.push(undefined);
     }
 
     // If we have a valid item scope, process the current node
@@ -136,48 +147,47 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       if ('xml:lang' in attributes) {
         itemScope.language = attributes['xml:lang'];
       }
-
-      // 6. Handle item properties
-      if ('itemprop' in attributes) {
-        itemScope = {
-          ...itemScope,
-          text: undefined,
-        };
-        changedItemScope = true;
-
-        // Set predicates in the scope, and handle them on tag close.
-        itemScope.predicates = this.util.createVocabIris(attributes.itemprop, itemScope);
-
-        // Check if a property handler that applies, forcefully use that as predicate value.
-        for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
-          if (handler.canHandle(name, attributes)) {
-            const object = handler.getObject(attributes, this.util, itemScope);
-            this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> itemScope.predicates, object);
-
-            // Finalize the predicates, so text values do not apply to them.
-            delete itemScope.predicates;
-          }
-        }
-      }
     }
 
-    // 2. Push any changes to the item scope to the stack
-    if (changedItemScope) {
-      this.itemScopeStack.push(itemScope);
-    } else {
-      // eslint-disable-next-line unicorn/no-useless-undefined
-      this.itemScopeStack.push(undefined);
+    // 6. Handle item properties
+    if ('itemprop' in attributes) {
+      const parentItemScope = this.getItemScope(true);
+      if (parentItemScope) {
+        // Set predicates in the scope, and handle them on tag close.
+        if (!parentItemScope.predicates) {
+          parentItemScope.predicates = {};
+        }
+        const depth = this.getDepth();
+        parentItemScope.predicates[depth] = this.util.createVocabIris(attributes.itemprop, parentItemScope);
+
+        // Check if a property handler that applies, forcefully use that as predicate value.
+        // But DON'T call handlers in this prop is a direct (nested) itemscope.
+        if (!('itemscope' in attributes)) {
+          for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
+            if (handler.canHandle(name, attributes)) {
+              const object = handler.getObject(attributes, this.util, parentItemScope);
+              this.emitPredicateTriples(parentItemScope, parentItemScope.predicates[depth], object);
+
+              // Finalize the predicates, so text values do not apply to them.
+              delete parentItemScope.predicates[depth];
+            }
+          }
+        }
+
+        // If no valid handler was found, indicate that we should collect text at this depth.
+        if (parentItemScope.predicates[depth]) {
+          this.textBufferStack[depth] = [];
+        }
+      }
     }
   }
 
   public onText(data: string): void {
-    // Save the text inside the item scope
-    const itemScope = this.getParentItemScope();
-    if (itemScope) {
-      if (!itemScope.text) {
-        itemScope.text = [];
+    // Save the text inside all item scopes that need to collect text
+    for (const textBuffer of this.textBufferStack) {
+      if (textBuffer) {
+        textBuffer.push(data);
       }
-      itemScope.text.push(data);
     }
   }
 
@@ -189,17 +199,30 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
 
   public onTagClose(): void {
     // Emit all triples that were determined in the active tag
-    const itemScope = this.getParentItemScope();
+    const itemScope = this.getItemScope(true);
     if (itemScope) {
-      if (itemScope.predicates) {
-        const textSegments: string[] = itemScope.text || [];
-        const object = this.util.createLiteral(textSegments.join(''), itemScope);
-        this.emitPredicateTriples(itemScope, itemScope.predicates, object);
+      const depth = this.getDepth();
+      if (itemScope.predicates && depth in itemScope.predicates) {
+        // First check if we have a child item scope, otherwise get the text content
+        // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
+        const object = itemScope.object ||
+          this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
+        this.emitPredicateTriples(itemScope, itemScope.predicates[depth], object);
+        delete itemScope.predicates[depth];
       }
     }
 
     // Remove the active tag from the stack
     this.itemScopeStack.pop();
+    this.textBufferStack.pop();
+
+    // Add subject of this item scope as object to the parent scope
+    if (itemScope) {
+      const parentItemScope = this.getItemScope(true);
+      if (parentItemScope && itemScope !== parentItemScope) {
+        parentItemScope.object = itemScope.subject;
+      }
+    }
   }
 
   public onEnd(): void {

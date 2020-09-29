@@ -231,6 +231,40 @@ describe('MicrodataRdfParser', () => {
           ]);
       });
 
+      it('an itemscope with itemprop with newlines', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop">
+
+a
+
+</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"\n\na\n\n"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with sub-tags', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop">
+
+<strong>
+a
+</strong>
+
+</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop', '"\n\n\na\n\n\n"'),
+          ]);
+      });
+
       it('an itemscope with space-separated itemprops', async() => {
         expect(await parse(parser, `<html>
 <head></head>
@@ -841,6 +875,116 @@ describe('MicrodataRdfParser', () => {
 </html>`))
           .toBeRdfIsomorphic([
             quad('_:b0', 'http://example.org/prop', '"b"@en'),
+          ]);
+      });
+
+      it('an itemscope with itemprop without nested itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1">
+            <span itemprop="http://example.org/prop2">b</span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '"\n            b\n        "'),
+            quad('_:b0', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with nested itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1" itemscope>
+            <span itemprop="http://example.org/prop2">b</span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '_:b1'),
+            quad('_:b1', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with nested itemscope with inner content value', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1" itemscope>
+            <span itemprop="http://example.org/prop2" content="b">ignored</span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '_:b1'),
+            quad('_:b1', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with deeply nested itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1" itemscope>
+            <span itemprop="http://example.org/prop2" itemscope>
+                <span itemprop="http://example.org/prop3">b</span>
+            </span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '_:b1'),
+            quad('_:b1', 'http://example.org/prop2', '_:b2'),
+            quad('_:b2', 'http://example.org/prop3', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with nested itemscope should ignore direct content', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1" itemscope content="ignored">
+            <span itemprop="http://example.org/prop2">b</span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '_:b1'),
+            quad('_:b1', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with itemprop with multiple nested itemscopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1.1" itemscope>
+            <span itemprop="http://example.org/prop1.2">b.1</span>
+        </span>
+        <span itemprop="http://example.org/prop2.1" itemscope>
+            <span itemprop="http://example.org/prop2.2">b.2</span>
+        </span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1.1', '_:b1.1'),
+            quad('_:b1.1', 'http://example.org/prop1.2', '"b.1"'),
+            quad('_:b0', 'http://example.org/prop2.1', '_:b2.1'),
+            quad('_:b2.1', 'http://example.org/prop2.2', '"b.2"'),
           ]);
       });
     });
