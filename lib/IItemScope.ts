@@ -9,4 +9,5 @@ export interface IItemScope {
   language?: string;
   predicates?: {[depth: number]: RDF.NamedNode[]};
   object?: RDF.Quad_Object;
+  blockEmission?: boolean;
 }

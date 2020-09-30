@@ -912,6 +912,21 @@ a
           ]);
       });
 
+      it('an itemscope with itemprop with anonymous nested itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop1"><span itemprop="http://example.org/prop2" itemscope>b</span></span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('_:b0', 'http://example.org/prop1', '"b"'),
+            quad('_:b0', 'http://example.org/prop2', '_:b1'),
+          ]);
+      });
+
       it('an itemscope with itemprop with nested itemscope with inner content value', async() => {
         expect(await parse(parser, `<html>
 <head></head>
@@ -985,6 +1000,513 @@ a
             quad('_:b1.1', 'http://example.org/prop1.2', '"b.1"'),
             quad('_:b0', 'http://example.org/prop2.1', '_:b2.1'),
             quad('_:b2.1', 'http://example.org/prop2.2', '"b.2"'),
+          ]);
+      });
+
+      it('an itemscope with one forward itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one backward itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with an itemref without range', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+          ]);
+      });
+
+      it('an itemscope with an itemref without domain', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([]);
+      });
+
+      it('an itemscope with empty itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref=""></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+          ]);
+      });
+
+      it('an itemscope with two forward itemrefs', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a b"></span>
+    <span id="a">Name: <span itemprop="prop">a</span></span>
+    <span id="b">Name: <span itemprop="prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"a"'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with two backward itemrefs', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">a</span></span>
+    <span id="b">Name: <span itemprop="prop">b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a b"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"a"'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one forward and one backward itemrefs', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">a</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a b"></span>
+    <span id="b">Name: <span itemprop="prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"a"'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one forward itemref with itemprop on id', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a" itemprop="prop">Name: <span>b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"Name: b"'),
+          ]);
+      });
+
+      it('an itemscope with one backward itemref with itemprop on id', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop">Name: <span>b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"Name: b"'),
+          ]);
+      });
+
+      it('an itemscope with one forward itemref multiple itemprops', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a" itemprop="prop1">Name: <span itemprop="prop2">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop1', '"Name: b"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one backward itemref multiple itemprops', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop1">Name: <span itemprop="prop2">b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop1', '"Name: b"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with an itemref refering to an inner tag', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a">
+        <span id="a" itemprop="prop">a</span>
+    </span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"a"'),
+          ]);
+      });
+
+      it('an itemscope with one forward nested itemref with itemprop on id', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a b"></span>
+    <span id="a" itemprop="prop1">Name: <span id="b" itemprop="prop2">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop1', '"Name: b"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one backward nested itemref with itemprop on id', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop1">Name: <span id="b" itemprop="prop2">b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a b"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop1', '"Name: b"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with multiple scopes pointing to same forward itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject1" itemtype="http://example.org/Person" itemref="a"></span>
+    <span itemscope itemid="http://example.org/subject2" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '"b"'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with multiple scopes pointing to same backward itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+    <span itemscope itemid="http://example.org/subject1" itemtype="http://example.org/Person" itemref="a"></span>
+    <span itemscope itemid="http://example.org/subject2" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '"b"'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with multiple scopes pointing to same intermediary itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject1" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a">Name: <span itemprop="prop">b</span></span>
+    <span itemscope itemid="http://example.org/subject2" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '"b"'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one forward itemref to itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemref="a" itemtype="http://example.org/Person"></span>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson">Name: <span itemprop="prop2">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one backward itemref to itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson">Name: <span itemprop="prop2">b</span></span>
+    <span itemscope itemid="http://example.org/subject" itemref="a" itemtype="http://example.org/Person"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with one forward itemref to deeper itemscopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemref="a" itemtype="http://example.org/Person"></span>
+    <span id="a" itemprop="prop">Name: <span itemprop="prop2" itemscope>b</span> <span itemprop="prop3" itemscope>c</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject', 'http://example.org/prop3', '_:b'),
+          ]);
+      });
+
+      it('an itemscope with one backward itemref to deeper itemscopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop">Name: <span itemprop="prop2" itemscope>b</span> <span itemprop="prop3" itemscope>c</span></span>
+    <span itemscope itemid="http://example.org/subject" itemref="a" itemtype="http://example.org/Person"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject', 'http://example.org/prop3', '_:b'),
+          ]);
+      });
+
+      it('an itemscope with two forward itemrefs to the same itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject1" itemref="a" itemtype="http://example.org/Person"></span>
+    <span itemscope itemid="http://example.org/subject2" itemref="a" itemtype="http://example.org/Person"></span>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson">Name: <span itemprop="prop2">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '_:b'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with two backward itemrefs to the same itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson">Name: <span itemprop="prop2">b</span></span>
+    <span itemscope itemid="http://example.org/subject1" itemref="a" itemtype="http://example.org/Person"></span>
+    <span itemscope itemid="http://example.org/subject2" itemref="a" itemtype="http://example.org/Person"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '_:b'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with two forward itemrefs to the same deeper itemscopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject1" itemref="a" itemtype="http://example.org/Person"></span>
+    <span itemscope itemid="http://example.org/subject2" itemref="a" itemtype="http://example.org/Person"></span>
+    <span id="a" itemprop="prop">Name: <span itemprop="prop2" itemscope>b</span> <span itemprop="prop3" itemscope>c</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject1', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject1', 'http://example.org/prop3', '_:b'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject2', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject2', 'http://example.org/prop3', '_:b'),
+          ]);
+      });
+
+      it('an itemscope with two backward itemrefs to the same deeper itemscopes', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop">Name: <span itemprop="prop2" itemscope>b</span> <span itemprop="prop3" itemscope>c</span></span>
+    <span itemscope itemid="http://example.org/subject1" itemref="a" itemtype="http://example.org/Person"></span>
+    <span itemscope itemid="http://example.org/subject2" itemref="a" itemtype="http://example.org/Person"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject1',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject1', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject1', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject1', 'http://example.org/prop3', '_:b'),
+            quad('http://example.org/subject2',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject2', 'http://example.org/prop', '"Name: b c"'),
+            quad('http://example.org/subject2', 'http://example.org/prop2', '_:a'),
+            quad('http://example.org/subject2', 'http://example.org/prop3', '_:b'),
+          ]);
+      });
+
+      it('an itemscope with an id with deeper itemscopes without itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a" itemprop="prop">Name: <span itemprop="prop2" itemscope>b</span> <span itemprop="prop3" itemscope>c</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([]);
+      });
+
+      it('an itemscope with a self-recursive itemref', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="a">Name: <span itemprop="prop">b
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+    </span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '"b\n    \n    "'),
           ]);
       });
     });

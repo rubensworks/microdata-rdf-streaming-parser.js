@@ -3,6 +3,7 @@ import { PassThrough, Transform } from 'stream';
 import type { DomHandler } from 'domhandler';
 import { Parser as HtmlParser } from 'htmlparser2';
 import type * as RDF from 'rdf-js';
+import type { BufferedTagEvent } from './BufferedTagEvent';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import type { IItemScope } from './IItemScope';
 import type { IVocabRegistry } from './IVocabRegistry';
@@ -44,8 +45,23 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   private readonly htmlParseListener?: IHtmlParseListener;
   private readonly vocabRegistry: IVocabRegistry;
 
-  private readonly itemScopeStack: (IItemScope | undefined)[] = [];
-  private readonly textBufferStack: (string[] | undefined)[] = [];
+  private itemScopeStack: (IItemScope | undefined)[] = [];
+  private textBufferStack: (string[] | undefined)[] = [];
+
+  private isEmittingReferences = false;
+  private readonly pendingItemRefsDomain: {[referenceId: string]: IItemScope[]} = {};
+  private readonly pendingItemRefsRangeFinalized: {[referenceId: string]: {
+    events: BufferedTagEvent[];
+    ids: RDF.Quad_Subject[];
+  };} = {};
+
+  private readonly pendingItemRefsRangeCollecting: {[referenceId: string]: {
+    events: BufferedTagEvent[];
+    counter: number;
+    ids: RDF.Quad_Subject[];
+  };} = {};
+
+  private emittingReferencesItemScopeIdGenerator: (() => (RDF.NamedNode | RDF.BlankNode)) | undefined;
 
   public constructor(options?: IMicrodataRdfParserOptions) {
     super({ readableObjectMode: true });
@@ -97,6 +113,24 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   public onTagOpen(name: string, attributes: {[s: string]: string}): void {
+    if (!this.isEmittingReferences) {
+      // If the tag has an 'id', start collecting the whole stack in the item reference buffer
+      if ('id' in attributes) {
+        const id = attributes.id;
+        this.pendingItemRefsRangeCollecting[id] = {
+          events: [],
+          counter: 0,
+          ids: [],
+        };
+      }
+
+      // Store this event in all collecting item reference buffers
+      for (const buffer of Object.values(this.pendingItemRefsRangeCollecting)) {
+        buffer.counter++;
+        buffer.events.push({ type: 'open', name, attributes });
+      }
+    }
+
     // Ensure the text buffer stack is in line with the stack depth
     // eslint-disable-next-line unicorn/no-useless-undefined
     this.textBufferStack.push(undefined);
@@ -106,10 +140,26 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     let itemScope: IItemScope | undefined;
     if ('itemscope' in attributes) {
       // Create a new item scope
-      const subject: RDF.Quad_Subject = 'itemid' in attributes && Util.isValidIri(attributes.itemid) ?
-        this.util.dataFactory.namedNode(attributes.itemid) :
-        this.util.dataFactory.blankNode();
+      let subject: RDF.NamedNode | RDF.BlankNode;
+      if (this.emittingReferencesItemScopeIdGenerator) {
+        subject = this.emittingReferencesItemScopeIdGenerator();
+      } else {
+        subject = 'itemid' in attributes && Util.isValidIri(attributes.itemid) ?
+          this.util.dataFactory.namedNode(attributes.itemid) :
+          this.util.dataFactory.blankNode();
+
+        // Store the genererated id in all collecting item reference buffers
+        for (const buffer of Object.values(this.pendingItemRefsRangeCollecting)) {
+          buffer.ids.push(subject);
+        }
+      }
       itemScope = { subject };
+
+      // If the id was reused from a reference, block any new triples to be generated from it
+      if (this.isEmittingReferences) {
+        itemScope.blockEmission = true;
+      }
+
       // 2. Push any changes to the item scope to the stack
       this.itemScopeStack.push(itemScope);
     } else {
@@ -132,11 +182,13 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
           }
 
           // Emit item type
-          this.emitTriple(
-            itemScope.subject,
-            this.util.dataFactory.namedNode(`${Util.RDF}type`),
-            type,
-          );
+          if (!itemScope.blockEmission) {
+            this.emitTriple(
+              itemScope.subject,
+              this.util.dataFactory.namedNode(`${Util.RDF}type`),
+              type,
+            );
+          }
         }
       }
 
@@ -146,6 +198,20 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       }
       if ('xml:lang' in attributes) {
         itemScope.language = attributes['xml:lang'];
+      }
+
+      // Handle itemrefs (only if we also had an itemscope)
+      if ('itemscope' in attributes) {
+        // If we have an itemref, store it in our domain buffer.
+        if (!this.isEmittingReferences && 'itemref' in attributes) {
+          for (const reference of attributes.itemref.split(/\s+/u)) {
+            if (!(reference in this.pendingItemRefsDomain)) {
+              this.pendingItemRefsDomain[reference] = [];
+            }
+            this.pendingItemRefsDomain[reference].push(itemScope);
+            this.tryToEmitReferences(reference, itemScope);
+          }
+        }
       }
     }
 
@@ -183,6 +249,13 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   public onText(data: string): void {
+    // Store this event in all collecting item reference buffers
+    if (!this.isEmittingReferences) {
+      for (const buffer of Object.values(this.pendingItemRefsRangeCollecting)) {
+        buffer.events.push({ type: 'text', data });
+      }
+    }
+
     // Save the text inside all item scopes that need to collect text
     for (const textBuffer of this.textBufferStack) {
       if (textBuffer) {
@@ -192,12 +265,31 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   protected emitPredicateTriples(itemScope: IItemScope, predicates: RDF.NamedNode[], object: RDF.Quad_Object): void {
-    for (const predicate of predicates) {
-      this.emitTriple(itemScope.subject, predicate, object);
+    if (!itemScope.blockEmission) {
+      for (const predicate of predicates) {
+        this.emitTriple(itemScope.subject, predicate, object);
+      }
     }
   }
 
   public onTagClose(): void {
+    // Store this event in all collecting item reference buffers
+    if (!this.isEmittingReferences) {
+      for (const [ reference, buffer ] of Object.entries(this.pendingItemRefsRangeCollecting)) {
+        buffer.counter--;
+        buffer.events.push({ type: 'close' });
+
+        // Once the counter becomes zero, the tag is fully buffered, so we finalize it.
+        if (buffer.counter === 0) {
+          this.pendingItemRefsRangeFinalized[reference] = buffer;
+          delete this.pendingItemRefsRangeCollecting[reference];
+
+          // Try to emit this reference with buffered domain items
+          this.tryToEmitReferences(reference);
+        }
+      }
+    }
+
     // Emit all triples that were determined in the active tag
     const itemScope = this.getItemScope(true);
     if (itemScope) {
@@ -289,6 +381,61 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         xmlMode,
       },
     );
+  }
+
+  protected tryToEmitReferences(reference: string, itemScopeDomain?: IItemScope): void {
+    const range = this.pendingItemRefsRangeFinalized[reference];
+    if (range) {
+      // Determine the item scope domains to emit
+      let applicableItemScopes: IItemScope[] | undefined;
+      if (itemScopeDomain) {
+        applicableItemScopes = [ itemScopeDomain ];
+
+        // Remove the item from the pending array
+        // Element is guaranteed to exist in buffer
+        const itemScopeDomainIndex = this.pendingItemRefsDomain[reference].indexOf(itemScopeDomain);
+        this.pendingItemRefsDomain[reference].splice(itemScopeDomainIndex, 1);
+      } else {
+        applicableItemScopes = this.pendingItemRefsDomain[reference];
+
+        // Remove all items from the pending array
+        delete this.pendingItemRefsDomain[reference];
+      }
+
+      if (applicableItemScopes) {
+        // Save the stack state
+        const itemScopeStackOld = this.itemScopeStack;
+        const textBufferStackOld = this.textBufferStack;
+        this.isEmittingReferences = true;
+
+        // For all applicable item scopes, emit the buffered events.
+        for (const itemScope of applicableItemScopes) {
+          this.itemScopeStack = [ itemScope ];
+          this.textBufferStack = [ undefined ];
+          const pendingIds = range.ids.slice();
+          this.emittingReferencesItemScopeIdGenerator = () => <RDF.NamedNode | RDF.BlankNode> pendingIds.shift();
+          for (const event of range.events) {
+            switch (event.type) {
+              case 'open':
+                this.onTagOpen(event.name, event.attributes);
+                break;
+              case 'text':
+                this.onText(event.data);
+                break;
+              case 'close':
+                this.onTagClose();
+                break;
+            }
+          }
+        }
+
+        // Restore the stack state
+        this.emittingReferencesItemScopeIdGenerator = undefined;
+        this.itemScopeStack = itemScopeStackOld;
+        this.textBufferStack = textBufferStackOld;
+        this.isEmittingReferences = false;
+      }
+    }
   }
 }
 
