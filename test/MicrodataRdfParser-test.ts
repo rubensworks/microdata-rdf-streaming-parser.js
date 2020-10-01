@@ -1509,6 +1509,48 @@ a
             quad('http://example.org/subject', 'http://example.org/prop', '"b\n    \n    "'),
           ]);
       });
+
+      it('an itemscope with a chained forward itemref to itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson" itemref="b">a</span>
+    <span id="b">Name: <span itemprop="prop2">b</span></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
+
+      it('an itemscope with a chained backward itemref to itemscope', async() => {
+        expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span id="b">Name: <span itemprop="prop2">b</span></span>
+    <span id="a" itemprop="prop" itemscope itemtype="http://example2.org/SubPerson" itemref="b">a</span>
+    <span itemscope itemid="http://example.org/subject" itemtype="http://example.org/Person" itemref="a"></span>
+</body>
+</html>`))
+          .toBeRdfIsomorphic([
+            quad('http://example.org/subject',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example.org/Person'),
+            quad('http://example.org/subject', 'http://example.org/prop', '_:b'),
+            quad('_:b',
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+              'http://example2.org/SubPerson'),
+            quad('_:b', 'http://example2.org/prop2', '"b"'),
+          ]);
+      });
     });
   });
 
