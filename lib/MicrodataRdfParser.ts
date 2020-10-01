@@ -144,8 +144,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       if (this.emittingReferencesItemScopeIdGenerator) {
         subject = this.emittingReferencesItemScopeIdGenerator();
       } else {
-        subject = 'itemid' in attributes && Util.isValidIri(attributes.itemid) ?
-          this.util.dataFactory.namedNode(attributes.itemid) :
+        subject = 'itemid' in attributes && this.util.createSubject(attributes.itemid) ||
           this.util.dataFactory.blankNode();
 
         // Store the genererated id in all collecting item reference buffers

@@ -9,7 +9,7 @@ describe('Util', () => {
     const instance = new Util(undefined, undefined);
     expect(instance).toBeInstanceOf(Util);
     expect((<any> instance).dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any> instance).baseIRI).toEqualRdfTerm(DF.namedNode(''));
+    expect((<any> instance).baseIRI).toEqual('');
   });
 
   it('should be constructable with non-null dataFactory and non-null baseIRI', () => {
@@ -17,7 +17,7 @@ describe('Util', () => {
     const instance = new Util(dataFactory, 'abc');
     expect(instance).toBeInstanceOf(Util);
     expect((<any> instance).dataFactory).toBe(dataFactory);
-    expect((<any> instance).baseIRI).toEqualRdfTerm(DF.namedNode('abc'));
+    expect((<any> instance).baseIRI).toEqual('abc');
   });
 
   describe('#isValidIri', () => {
@@ -39,24 +39,6 @@ describe('Util', () => {
 
     beforeEach(() => {
       util = new Util(undefined, 'http://example.org/');
-    });
-
-    describe('#getBaseIRI', () => {
-      it('should return the baseIRI without hash', async() => {
-        expect(util.getBaseIRI('http://base.org/'))
-          .toEqualRdfTerm(DF.namedNode('http://base.org/'));
-      });
-
-      it('should return the baseIRI with hash', async() => {
-        expect(util.getBaseIRI('http://base.org/#hash'))
-          .toEqualRdfTerm(DF.namedNode('http://base.org/'));
-      });
-
-      it('should return a relative baseIRI', async() => {
-        util.baseIRI = DF.namedNode('http://example.org/');
-        expect(util.getBaseIRI('abc'))
-          .toEqualRdfTerm(DF.namedNode('http://example.org/abc'));
-      });
     });
 
     describe('#deriveVocab', () => {

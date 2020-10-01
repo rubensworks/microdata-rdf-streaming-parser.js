@@ -21,6 +21,6 @@ export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
   }
 
   public getObject(attributes: { [p: string]: string }, util: Util, itemScope: IItemScope): RDF.Quad_Object {
-    return util.dataFactory.namedNode(resolve(attributes[this.attributeName], util.baseIRI.value));
+    return util.dataFactory.namedNode(resolve(attributes[this.attributeName], util.baseIRI));
   }
 }

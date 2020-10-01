@@ -15,11 +15,11 @@ export class Util {
   private static readonly IRI_REGEX: RegExp = /^([A-Za-z][\d+-.A-Za-z]*|_):[^ "<>[\\\]`{|}]*$/u;
 
   public readonly dataFactory: RDF.DataFactory;
-  public baseIRI: RDF.NamedNode;
+  public baseIRI: string;
 
   public constructor(dataFactory?: RDF.DataFactory, baseIRI?: string) {
     this.dataFactory = dataFactory || new DataFactory();
-    this.baseIRI = this.dataFactory.namedNode(baseIRI || '');
+    this.baseIRI = baseIRI || '';
   }
 
   /**
@@ -32,39 +32,32 @@ export class Util {
   }
 
   /**
-   * Get the base IRI.
-   * @param {string} baseIriValue A base IRI value.
-   * @return A base IRI named node.
-   */
-  public getBaseIRI(baseIriValue: string): RDF.NamedNode {
-    let href: string = baseIriValue;
-    const fragmentIndex = href.indexOf('#');
-    if (fragmentIndex >= 0) {
-      href = href.slice(0, Math.max(0, fragmentIndex));
-    }
-    return this.dataFactory.namedNode(resolve(href, this.baseIRI.value));
-  }
-
-  /**
    * Create vocab terms for the given terms attribute.
    * @param {string} terms An attribute value.
    * @return {Term[]} The IRI terms.
    */
   public createVocabIris(terms: string, itemScope: IItemScope): RDF.NamedNode[] {
     return terms.split(/\s+/u)
-      .map(property => this.createIri(property, itemScope, true));
+      .map(property => {
+        if (!Util.isValidIri(property)) {
+          property = `${itemScope.vocab || `${this.baseIRI}#`}${property}`;
+        }
+        return this.dataFactory.namedNode(property);
+      });
   }
 
   /**
-   * Create a named node for the given term, which can be relative to the current vocab, or document base as fallback.
-   * @param {string} term A term string.
-   * @param {IItemScope} itemScope The current item scope.
-   * @param {boolean} useVocab If the current vocab value can be used.
-   * @return {Term} An RDF term.
+   * Create a named node for the given term, which can be relative to the document base.
+   * @param {string} iri A term string.
+   * @return {Term} An RDF term, or undefined if invalid.
    */
-  public createIri(iri: string, itemScope: IItemScope, useVocab: boolean): RDF.NamedNode {
+  public createSubject(iri: string): RDF.NamedNode | undefined {
     if (!Util.isValidIri(iri)) {
-      iri = `${useVocab && itemScope.vocab || `${this.baseIRI.value}#`}${iri}`;
+      try {
+        iri = resolve(iri, this.baseIRI);
+      } catch {
+        return;
+      }
     }
     return this.dataFactory.namedNode(iri);
   }

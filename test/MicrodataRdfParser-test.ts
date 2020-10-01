@@ -15,7 +15,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser();
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode(''));
+    expect((<any>instance).util.baseIRI).toEqual('');
     expect((<any>instance).defaultGraph).toBe(DF.defaultGraph());
   });
 
@@ -23,7 +23,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser({});
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode(''));
+    expect((<any>instance).util.baseIRI).toEqual('');
     expect((<any>instance).defaultGraph).toBe(DF.defaultGraph());
   });
 
@@ -32,7 +32,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser({ dataFactory });
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBe(dataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode('abc'));
+    expect((<any>instance).util.baseIRI).toEqual('');
     expect((<any>instance).defaultGraph).toBe('abc');
   });
 
@@ -40,7 +40,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser({ baseIRI: 'myBaseIRI' });
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode('myBaseIRI'));
+    expect((<any>instance).util.baseIRI).toEqual('myBaseIRI');
     expect((<any>instance).defaultGraph).toBe(DF.defaultGraph());
   });
 
@@ -49,7 +49,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser({ defaultGraph });
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode(''));
+    expect((<any>instance).util.baseIRI).toEqual('');
     expect((<any>instance).defaultGraph).toBe(defaultGraph);
   });
 
@@ -59,7 +59,7 @@ describe('MicrodataRdfParser', () => {
     const instance = new MicrodataRdfParser({ dataFactory, baseIRI: 'myBaseIRI', defaultGraph });
     expect(instance).toBeInstanceOf(MicrodataRdfParser);
     expect((<any>instance).util.dataFactory).toBe(dataFactory);
-    expect((<any>instance).util.baseIRI).toEqualRdfTerm(DF.namedNode('abc'));
+    expect((<any>instance).util.baseIRI).toEqual('myBaseIRI');
     expect((<any>instance).defaultGraph).toBe(defaultGraph);
   });
 
@@ -167,6 +167,55 @@ describe('MicrodataRdfParser', () => {
 </html>`))
             .toBeRdfIsomorphic([
               quad('http://example.org/id',
+                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                'http://example.org/Type'),
+            ]);
+        });
+
+        it('an itemscope with itemtype and relative itemid', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span
+    itemscope
+    itemtype="http://example.org/Type"
+    itemid="id"></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('http://example.org/id',
+                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                'http://example.org/Type'),
+            ]);
+        });
+
+        it('an itemscope with itemtype and relative itemid when no baseIRI is provided', async() => {
+          expect(await parse(new MicrodataRdfParser(), `<html>
+<head></head>
+<body>
+    <span
+    itemscope
+    itemtype="http://example.org/Type"
+    itemid="id"></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Type'),
+            ]);
+        });
+
+        it('an itemscope with itemtype and hash-relative itemid', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span
+    itemscope
+    itemtype="http://example.org/Type"
+    itemid="#id"></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('http://example.org/document.html#id',
                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                 'http://example.org/Type'),
             ]);
