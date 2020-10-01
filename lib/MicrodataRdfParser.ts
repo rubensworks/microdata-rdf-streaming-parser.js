@@ -228,7 +228,12 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
 
         // Check if a property handler that applies, forcefully use that as predicate value.
         // But DON'T call handlers in this prop is a direct (nested) itemscope.
-        if (!('itemscope' in attributes)) {
+        if (itemScope && 'itemscope' in attributes) {
+          this.emitPredicateTriples(parentItemScope, parentItemScope.predicates[depth], itemScope.subject);
+
+          // Finalize the predicates, so text values do not apply to them.
+          delete parentItemScope.predicates[depth];
+        } else {
           for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
             if (handler.canHandle(name, attributes)) {
               const object = handler.getObject(attributes, this.util, parentItemScope);
@@ -297,8 +302,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       if (itemScope.predicates && depth in itemScope.predicates) {
         // First check if we have a child item scope, otherwise get the text content
         // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
-        const object = itemScope.object ||
-          this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
+        const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
         this.emitPredicateTriples(itemScope, itemScope.predicates[depth], object);
         delete itemScope.predicates[depth];
       }
@@ -307,14 +311,6 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     // Remove the active tag from the stack
     this.itemScopeStack.pop();
     this.textBufferStack.pop();
-
-    // Add subject of this item scope as object to the parent scope
-    if (itemScope) {
-      const parentItemScope = this.getItemScope(true);
-      if (parentItemScope && itemScope !== parentItemScope) {
-        parentItemScope.object = itemScope.subject;
-      }
-    }
   }
 
   public onEnd(): void {
