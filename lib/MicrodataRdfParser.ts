@@ -159,6 +159,12 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         itemScope.blockEmission = true;
       }
 
+      // Inherit vocab from parent item scope
+      const parentItemScope = this.getItemScope();
+      if (parentItemScope && parentItemScope.vocab) {
+        itemScope.vocab = parentItemScope.vocab;
+      }
+
       // 2. Push any changes to the item scope to the stack
       this.itemScopeStack.push(itemScope);
     } else {

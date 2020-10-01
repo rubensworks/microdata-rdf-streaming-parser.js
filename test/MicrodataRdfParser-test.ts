@@ -1143,6 +1143,24 @@ a
               quad('_:b2.1', 'http://example.org/prop2.2', '"b.2"'),
             ]);
         });
+
+        it('an itemscope with itemprop with nested itemscope and vocab inheritance', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://schema.org/Person">
+        <span itemprop="prop1" itemscope>
+            <span itemprop="prop2">b</span>
+        </span>
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Person'),
+              quad('_:b0', 'http://schema.org/prop1', '_:b1'),
+              quad('_:b1', 'http://schema.org/prop2', '"b"'),
+            ]);
+        });
       });
 
       describe('itemref', () => {
