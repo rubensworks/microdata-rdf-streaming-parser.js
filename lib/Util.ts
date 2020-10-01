@@ -106,7 +106,7 @@ export class Util {
     if (!vocab) {
       const hashPos = typeIri.indexOf('#');
       if (hashPos > 0) {
-        vocab = typeIri.slice(0, hashPos);
+        vocab = typeIri.slice(0, hashPos + 1);
       } else {
         vocab = resolve('.', typeIri);
       }

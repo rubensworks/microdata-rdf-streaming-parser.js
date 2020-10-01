@@ -42,9 +42,9 @@ describe('Util', () => {
     });
 
     describe('#deriveVocab', () => {
-      it('should remove the hash for an empty registry', async() => {
+      it('should remove everything after the hash for an empty registry', async() => {
         expect(util.deriveVocab('http://ex.org/a/b/c#xyz', {}))
-          .toEqual('http://ex.org/a/b/c');
+          .toEqual('http://ex.org/a/b/c#');
       });
 
       it('should remove the last path segment for an empty registry', async() => {

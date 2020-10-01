@@ -367,6 +367,19 @@ a
             ]);
         });
 
+        it('an itemscope with itemprop with relative URL to a hash vocab', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org#Type"><span itemprop="prop">abc</span></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org#Type'),
+              quad('_:b0', 'http://example.org#prop', '"abc"'),
+            ]);
+        });
+
         it('an itemscope with itemprop with relative URL without vocab', async() => {
           expect(await parse(parser, `<html>
 <head></head>
