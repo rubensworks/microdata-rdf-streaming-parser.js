@@ -57,6 +57,38 @@ export class Util {
   }
 
   /**
+   * Get the predicates for which the given itemprop value should cause vocabulary expansion.
+   * @param terms An attribute value.
+   * @param itemScope The active item scope.
+   * @param vocabRegistry The active vocabulary registry.
+   */
+  public getVocabularyExpansionType(
+    terms: string,
+    itemScope: IItemScope,
+    vocabRegistry: IVocabRegistry,
+  ): RDF.NamedNode[] {
+    // Check the presence of subPropertyOf or equivalentProperty
+    const parts = terms.split(/\s+/u);
+    if (parts.includes('subPropertyOf') || parts.includes('equivalentProperty')) {
+      return [ this.dataFactory.namedNode(`${Util.RDF}type`) ];
+    }
+
+    // Check in the item scope's vocab
+    if (itemScope.vocab && itemScope.vocab in vocabRegistry && vocabRegistry[itemScope.vocab].properties) {
+      let predicates: RDF.NamedNode[] = [];
+      for (const [ property, expansions ] of Object
+        .entries(<{[property: string]: {[name: string]: string}}> vocabRegistry[itemScope.vocab].properties)) {
+        if (parts.includes(property)) {
+          predicates = predicates.concat(Object.values(expansions).map(iri => this.dataFactory.namedNode(iri)));
+        }
+      }
+      return predicates;
+    }
+
+    return [];
+  }
+
+  /**
    * Create a named node for the given term, which can be relative to the document base.
    * @param {string} iri A term string.
    * @return {Term} An RDF term, or undefined if invalid.

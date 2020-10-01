@@ -1726,6 +1726,72 @@ a
             ]);
         });
       });
+
+      describe('vocabulary expansion', () => {
+        it('for subPropertyOf for vocab not in registry', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Person">
+        <link itemprop="subPropertyOf" href="http://example.org/Human" />
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Person'),
+              quad('_:b0', 'http://example.org/subPropertyOf', 'http://example.org/Human'),
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Human'),
+            ]);
+        });
+
+        it('for equivalentProperty for vocab not in registry', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Person">
+        <link itemprop="equivalentProperty" href="http://example.org/Human" />
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Person'),
+              quad('_:b0', 'http://example.org/equivalentProperty', 'http://example.org/Human'),
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Human'),
+            ]);
+        });
+
+        it('for subPropertyOf for vocab not in registry on itemprop-reverse', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://example.org/Person">
+        <link itemprop-reverse="subPropertyOf" href="http://example.org/Human" />
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/Person'),
+              quad('http://example.org/Human', 'http://example.org/subPropertyOf', '_:b0'),
+              quad('http://example.org/Human', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', '_:b0'),
+            ]);
+        });
+
+        it('for indirect subPropertyOf for vocab in registry', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="http://schema.org/Person">
+        <link itemprop="additionalType" href="http://schema.org/Human" />
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Person'),
+              quad('_:b0', 'http://schema.org/additionalType', 'http://schema.org/Human'),
+              quad('_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Human'),
+            ]);
+        });
+      });
     });
   });
 

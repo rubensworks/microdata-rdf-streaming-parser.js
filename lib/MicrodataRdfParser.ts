@@ -268,6 +268,15 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       const predicatesKey = reverse ? 'reverse' : 'forward';
       parentItemScope.predicates[depth][predicatesKey] = predicates;
 
+      // Append rdf:type predicate if vocabulary expansion applies
+      for (const vocabularyExpansionType of this.util.getVocabularyExpansionType(
+        itempropValue,
+        parentItemScope,
+        this.vocabRegistry,
+      )) {
+        predicates.push(vocabularyExpansionType);
+      }
+
       // Check if a property handler that applies, forcefully use that as predicate value.
       // But DON'T call handlers in this prop is a direct (nested) itemscope.
       if (itemScope && 'itemscope' in tagAttributes) {

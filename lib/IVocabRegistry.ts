@@ -5,5 +5,7 @@
  * @link https://www.w3.org/ns/md
  */
 export interface IVocabRegistry {
-  [uriPrefix: string]: any;
+  [uriPrefix: string]: {
+    properties?: {[property: string]: {[name: string]: string}};
+  };
 }
