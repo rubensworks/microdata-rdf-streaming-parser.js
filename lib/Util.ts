@@ -33,17 +33,27 @@ export class Util {
 
   /**
    * Create vocab terms for the given terms attribute.
+   *
+   * Relative IRIs will be based on the active vocab or baseIRI if `allowRelativeIris` is true.
+   *
    * @param {string} terms An attribute value.
+   * @param {IItemScope} itemScope The active item scope.
+   * @param {boolean} allowRelativeIris If relative IRIs are allowed.
    * @return {Term[]} The IRI terms.
    */
-  public createVocabIris(terms: string, itemScope: IItemScope): RDF.NamedNode[] {
-    return terms.split(/\s+/u)
+  public createVocabIris(terms: string, itemScope: IItemScope, allowRelativeIris: boolean): RDF.NamedNode[] {
+    return <RDF.NamedNode[]> terms.split(/\s+/u)
+      .filter(term => !!term)
       .map(property => {
         if (!Util.isValidIri(property)) {
+          if (!allowRelativeIris) {
+            return;
+          }
           property = `${itemScope.vocab || `${this.baseIRI}#`}${property}`;
         }
         return this.dataFactory.namedNode(property);
-      });
+      })
+      .filter(term => !!term);
   }
 
   /**

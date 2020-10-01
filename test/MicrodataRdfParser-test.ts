@@ -142,7 +142,27 @@ describe('MicrodataRdfParser', () => {
         });
       });
 
-      describe('itemscope', () => {
+      describe('itemtype', () => {
+        it('an itemscope with empty itemtype', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype=""></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([]);
+        });
+
+        it('an itemscope with relative itemtype', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope itemtype="Invalid"></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([]);
+        });
+
         it('an itemscope with itemtype', async() => {
           expect(await parse(parser, `<html>
 <head></head>

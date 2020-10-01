@@ -173,7 +173,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     if (itemScope) {
       // 3. Handle item types
       if ('itemtype' in attributes) {
-        for (const type of this.util.createVocabIris(attributes.itemtype, itemScope)) {
+        for (const type of this.util.createVocabIris(attributes.itemtype, itemScope, false)) {
           // 4. Vocab identifier is the first valid item
           if (!itemScope.vocab) {
             // 5. Modify vocab based on registry
@@ -252,10 +252,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     if (parentItemScope) {
       // Set predicates in the scope, and handle them on tag close.
       const depth = this.getDepth();
-      const predicates = this.util.createVocabIris(
-        itempropValue,
-        parentItemScope,
-      );
+      const predicates = this.util.createVocabIris(itempropValue, parentItemScope, true);
       if (!parentItemScope.predicates) {
         parentItemScope.predicates = {};
       }
