@@ -7,6 +7,6 @@ export interface IItemScope {
   subject: RDF.NamedNode | RDF.BlankNode;
   vocab?: string;
   language?: string;
-  predicates?: {[depth: number]: RDF.NamedNode[]};
+  predicates?: {[depth: number]: { forward?: RDF.NamedNode[]; reverse?: RDF.NamedNode[] }};
   blockEmission?: boolean;
 }

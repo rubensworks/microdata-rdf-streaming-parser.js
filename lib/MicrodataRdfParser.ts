@@ -217,39 +217,12 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
 
     // 6. Handle item properties
     if ('itemprop' in attributes) {
-      const parentItemScope = this.getItemScope(true);
-      if (parentItemScope) {
-        // Set predicates in the scope, and handle them on tag close.
-        if (!parentItemScope.predicates) {
-          parentItemScope.predicates = {};
-        }
-        const depth = this.getDepth();
-        parentItemScope.predicates[depth] = this.util.createVocabIris(attributes.itemprop, parentItemScope);
-
-        // Check if a property handler that applies, forcefully use that as predicate value.
-        // But DON'T call handlers in this prop is a direct (nested) itemscope.
-        if (itemScope && 'itemscope' in attributes) {
-          this.emitPredicateTriples(parentItemScope, parentItemScope.predicates[depth], itemScope.subject);
-
-          // Finalize the predicates, so text values do not apply to them.
-          delete parentItemScope.predicates[depth];
-        } else {
-          for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
-            if (handler.canHandle(name, attributes)) {
-              const object = handler.getObject(attributes, this.util, parentItemScope);
-              this.emitPredicateTriples(parentItemScope, parentItemScope.predicates[depth], object);
-
-              // Finalize the predicates, so text values do not apply to them.
-              delete parentItemScope.predicates[depth];
-            }
-          }
-        }
-
-        // If no valid handler was found, indicate that we should collect text at this depth.
-        if (parentItemScope.predicates[depth]) {
-          this.textBufferStack[depth] = [];
-        }
-      }
+      this.handleItemProperties(attributes.itemprop, false, itemScope, name, attributes);
+    }
+    // Handle reverse item properties
+    // https://w3c.github.io/microdata-rdf/#reverse-itemprop
+    if ('itemprop-reverse' in attributes) {
+      this.handleItemProperties(attributes['itemprop-reverse'], true, itemScope, name, attributes);
     }
   }
 
@@ -269,10 +242,72 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
-  protected emitPredicateTriples(itemScope: IItemScope, predicates: RDF.NamedNode[], object: RDF.Quad_Object): void {
+  protected handleItemProperties(
+    itempropValue: string,
+    reverse: boolean,
+    itemScope: IItemScope | undefined,
+    tagName: string,
+    tagAttributes: {[s: string]: string},
+  ): void {
+    const parentItemScope = this.getItemScope(true);
+    if (parentItemScope) {
+      // Set predicates in the scope, and handle them on tag close.
+      const depth = this.getDepth();
+      const predicates = this.util.createVocabIris(
+        itempropValue,
+        parentItemScope,
+      );
+      if (!parentItemScope.predicates) {
+        parentItemScope.predicates = {};
+      }
+      if (!parentItemScope.predicates[depth]) {
+        parentItemScope.predicates[depth] = {};
+      }
+      const predicatesKey = reverse ? 'reverse' : 'forward';
+      parentItemScope.predicates[depth][predicatesKey] = predicates;
+
+      // Check if a property handler that applies, forcefully use that as predicate value.
+      // But DON'T call handlers in this prop is a direct (nested) itemscope.
+      if (itemScope && 'itemscope' in tagAttributes) {
+        this.emitPredicateTriples(parentItemScope, predicates, itemScope.subject, reverse);
+
+        // Finalize the predicates, so text values do not apply to them.
+        delete parentItemScope.predicates[depth][predicatesKey];
+      } else {
+        for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
+          if (handler.canHandle(tagName, tagAttributes)) {
+            const object = handler.getObject(tagAttributes, this.util, parentItemScope);
+            this.emitPredicateTriples(parentItemScope, predicates, object, reverse);
+
+            // Finalize the predicates, so text values do not apply to them.
+            delete parentItemScope.predicates[depth][predicatesKey];
+          }
+        }
+      }
+
+      // If no valid handler was found, indicate that we should collect text at this depth.
+      if (parentItemScope.predicates[depth][predicatesKey]) {
+        this.textBufferStack[depth] = [];
+      }
+    }
+  }
+
+  protected emitPredicateTriples(
+    itemScope: IItemScope,
+    predicates: RDF.NamedNode[],
+    object: RDF.Quad_Object,
+    reverse: boolean,
+  ): void {
     if (!itemScope.blockEmission) {
       for (const predicate of predicates) {
-        this.emitTriple(itemScope.subject, predicate, object);
+        if (reverse) {
+          // Literals can not exist in subject position, so they must be ignored.
+          if (object.termType !== 'Literal') {
+            this.emitTriple(object, predicate, itemScope.subject);
+          }
+        } else {
+          this.emitTriple(itemScope.subject, predicate, object);
+        }
       }
     }
   }
@@ -300,11 +335,13 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     if (itemScope) {
       const depth = this.getDepth();
       if (itemScope.predicates && depth in itemScope.predicates) {
-        // First check if we have a child item scope, otherwise get the text content
-        // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
-        const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
-        this.emitPredicateTriples(itemScope, itemScope.predicates[depth], object);
-        delete itemScope.predicates[depth];
+        for (const [ predicateKey, predicates ] of Object.entries(itemScope.predicates[depth])) {
+          // First check if we have a child item scope, otherwise get the text content
+          // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
+          const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
+          this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> predicates, object, predicateKey === 'reverse');
+          delete itemScope.predicates[depth][<'forward' | 'reverse'> predicateKey];
+        }
       }
     }
 

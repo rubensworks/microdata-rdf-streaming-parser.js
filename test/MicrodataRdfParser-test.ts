@@ -371,6 +371,59 @@ a
         });
       });
 
+      describe('itemprop-reverse', () => {
+        it('an itemscope with itemprop-reverse with string value should be ignored', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop-reverse="http://example.org/prop">abc</span></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([]);
+        });
+
+        it('an itemscope with itemprop-reverse with nested itemscope', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop-reverse="http://example.org/prop1" itemscope itemid="http://example.org/sub"></span>
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('http://example.org/sub', 'http://example.org/prop1', '_:b0'),
+            ]);
+        });
+
+        it('an itemscope with itemprop and itemprop-reverse with nested itemscope', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope>
+        <span itemprop="http://example.org/prop" itemprop-reverse="http://example.org/propRev" itemscope itemid="http://example.org/sub"></span>
+    </span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://example.org/prop', 'http://example.org/sub'),
+              quad('http://example.org/sub', 'http://example.org/propRev', '_:b0'),
+            ]);
+        });
+
+        it('an itemscope with itemprop-reverse with string value should be ignored, but not itemprop', async() => {
+          expect(await parse(parser, `<html>
+<head></head>
+<body>
+    <span itemscope><span itemprop="http://example.org/prop" itemprop-reverse="http://example.org/propRev">abc</span></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://example.org/prop', '"abc"'),
+            ]);
+        });
+      });
+
       describe('special itemprops', () => {
         it('an itemscope with itemprop and content', async() => {
           expect(await parse(parser, `<html>
