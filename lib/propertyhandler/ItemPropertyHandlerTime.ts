@@ -4,7 +4,7 @@ import { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
 /**
- * An item property for time tags.
+ * Handler for an item property for time tags.
  */
 export class ItemPropertyHandlerTime implements IItemPropertyHandler {
   private static readonly TIME_REGEXES: { regex: RegExp; type: string }[] = [

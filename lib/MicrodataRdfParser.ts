@@ -45,22 +45,24 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   private readonly htmlParseListener?: IHtmlParseListener;
   private readonly vocabRegistry: IVocabRegistry;
 
+  // Stacks, where the key is the current depth.
   private itemScopeStack: (IItemScope | undefined)[] = [];
   private textBufferStack: (string[] | undefined)[] = [];
 
+  // Variables for managing itemrefs.
   private isEmittingReferences = false;
   private readonly pendingItemRefsDomain: {[referenceId: string]: IItemScope[]} = {};
   private readonly pendingItemRefsRangeFinalized: {[referenceId: string]: {
     events: BufferedTagEvent[];
     ids: RDF.Quad_Subject[];
   };} = {};
-
+  // eslint-disable-next-line lines-between-class-members
   private readonly pendingItemRefsRangeCollecting: {[referenceId: string]: {
     events: BufferedTagEvent[];
     counter: number;
     ids: RDF.Quad_Subject[];
   };} = {};
-
+  // eslint-disable-next-line lines-between-class-members
   private emittingReferencesItemScopeIdGenerator: (() => (RDF.NamedNode | RDF.BlankNode)) | undefined;
 
   public constructor(options?: IMicrodataRdfParserOptions) {
@@ -100,6 +102,11 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     callback();
   }
 
+  /**
+   * Get the current item scope for the current depth.
+   * This will skip all undefined item scopes.
+   * @param parent If we should start looking one level higher in the stack.
+   */
   protected getItemScope(parent?: boolean): IItemScope | undefined {
     let parentTagI: number = this.itemScopeStack.length - (parent ? 2 : 1);
     while (parentTagI > 0 && !this.itemScopeStack[parentTagI]) {
@@ -108,6 +115,9 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return this.itemScopeStack[parentTagI];
   }
 
+  /**
+   * Get the current stack depth.
+   */
   protected getDepth(): number {
     return this.itemScopeStack.length;
   }
@@ -247,6 +257,112 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
+  public onTagClose(): void {
+    // Store this event in all collecting item reference buffers
+    if (!this.isEmittingReferences) {
+      for (const [ reference, buffer ] of Object.entries(this.pendingItemRefsRangeCollecting)) {
+        buffer.counter--;
+        buffer.events.push({ type: 'close' });
+
+        // Once the counter becomes zero, the tag is fully buffered, so we finalize it.
+        if (buffer.counter === 0) {
+          this.pendingItemRefsRangeFinalized[reference] = buffer;
+          delete this.pendingItemRefsRangeCollecting[reference];
+
+          // Try to emit this reference with buffered domain items
+          this.tryToEmitReferences(reference);
+        }
+      }
+    }
+
+    // Emit all triples that were determined in the active tag
+    const itemScope = this.getItemScope(true);
+    if (itemScope) {
+      const depth = this.getDepth();
+      if (itemScope.predicates && depth in itemScope.predicates) {
+        for (const [ predicateKey, predicates ] of Object.entries(itemScope.predicates[depth])) {
+          // First check if we have a child item scope, otherwise get the text content
+          // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
+          const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
+          this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> predicates, object, predicateKey === 'reverse');
+          delete itemScope.predicates[depth][<'forward' | 'reverse'> predicateKey];
+        }
+      }
+    }
+
+    // Remove the active tag from the stack
+    this.itemScopeStack.pop();
+    this.textBufferStack.pop();
+  }
+
+  public onEnd(): void {
+    // Nothing important should happen here.
+  }
+
+  /**
+   * Initialize a new HtmlParser.
+   * @param xmlMode If the parser should be setup in strict mode.
+   */
+  protected initializeParser(xmlMode: boolean): HtmlParser {
+    return new HtmlParser(
+      <DomHandler> <any> {
+        onclosetag: () => {
+          try {
+            this.onTagClose();
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onTagClose();
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        onend: () => {
+          try {
+            this.onEnd();
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onEnd();
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        onopentag: (name: string, attributes: {[s: string]: string}) => {
+          try {
+            this.onTagOpen(name, attributes);
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onTagOpen(name, attributes);
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+        ontext: (data: string) => {
+          try {
+            this.onText(data);
+            if (this.htmlParseListener) {
+              this.htmlParseListener.onText(data);
+            }
+          } catch (error: unknown) {
+            this.emit('error', error);
+          }
+        },
+      },
+      {
+        decodeEntities: true,
+        recognizeSelfClosing: true,
+        xmlMode,
+      },
+    );
+  }
+
+  /**
+   * Handle the given item properties.
+   * @param itempropValue The value of itemprop or itemprop-reverse.
+   * @param reverse If the item properties are reversed (itemprop-reverse).
+   * @param itemScope The current item scope.
+   * @param tagName The current tag name.
+   * @param tagAttributes The current tag attributes.
+   */
   protected handleItemProperties(
     itempropValue: string,
     reverse: boolean,
@@ -303,6 +419,13 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
+  /**
+   * Emit the given object for the given predicates.
+   * @param itemScope The current item scope.
+   * @param predicates An array of predicates.
+   * @param object An object.
+   * @param reverse If the triples should be reversed.
+   */
   protected emitPredicateTriples(
     itemScope: IItemScope,
     predicates: RDF.NamedNode[],
@@ -323,110 +446,21 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
   }
 
-  public onTagClose(): void {
-    // Store this event in all collecting item reference buffers
-    if (!this.isEmittingReferences) {
-      for (const [ reference, buffer ] of Object.entries(this.pendingItemRefsRangeCollecting)) {
-        buffer.counter--;
-        buffer.events.push({ type: 'close' });
-
-        // Once the counter becomes zero, the tag is fully buffered, so we finalize it.
-        if (buffer.counter === 0) {
-          this.pendingItemRefsRangeFinalized[reference] = buffer;
-          delete this.pendingItemRefsRangeCollecting[reference];
-
-          // Try to emit this reference with buffered domain items
-          this.tryToEmitReferences(reference);
-        }
-      }
-    }
-
-    // Emit all triples that were determined in the active tag
-    const itemScope = this.getItemScope(true);
-    if (itemScope) {
-      const depth = this.getDepth();
-      if (itemScope.predicates && depth in itemScope.predicates) {
-        for (const [ predicateKey, predicates ] of Object.entries(itemScope.predicates[depth])) {
-          // First check if we have a child item scope, otherwise get the text content
-          // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
-          const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
-          this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> predicates, object, predicateKey === 'reverse');
-          delete itemScope.predicates[depth][<'forward' | 'reverse'> predicateKey];
-        }
-      }
-    }
-
-    // Remove the active tag from the stack
-    this.itemScopeStack.pop();
-    this.textBufferStack.pop();
-  }
-
-  public onEnd(): void {
-    // TODO
-  }
-
   /**
    * Emit the given triple to the stream.
-   * @param {Term} subject A subject term.
-   * @param {Term} predicate A predicate term.
-   * @param {Term} object An object term.
+   * @param {Quad_Subject} subject A subject term.
+   * @param {Quad_Predicate} predicate A predicate term.
+   * @param {Quad_Object} object An object term.
    */
   protected emitTriple(subject: RDF.Quad_Subject, predicate: RDF.Quad_Predicate, object: RDF.Quad_Object): void {
     this.push(this.util.dataFactory.quad(subject, predicate, object, this.defaultGraph));
   }
 
-  protected initializeParser(xmlMode: boolean): HtmlParser {
-    return new HtmlParser(
-      <DomHandler> <any> {
-        onclosetag: () => {
-          try {
-            this.onTagClose();
-            if (this.htmlParseListener) {
-              this.htmlParseListener.onTagClose();
-            }
-          } catch (error: unknown) {
-            this.emit('error', error);
-          }
-        },
-        onend: () => {
-          try {
-            this.onEnd();
-            if (this.htmlParseListener) {
-              this.htmlParseListener.onEnd();
-            }
-          } catch (error: unknown) {
-            this.emit('error', error);
-          }
-        },
-        onopentag: (name: string, attributes: {[s: string]: string}) => {
-          try {
-            this.onTagOpen(name, attributes);
-            if (this.htmlParseListener) {
-              this.htmlParseListener.onTagOpen(name, attributes);
-            }
-          } catch (error: unknown) {
-            this.emit('error', error);
-          }
-        },
-        ontext: (data: string) => {
-          try {
-            this.onText(data);
-            if (this.htmlParseListener) {
-              this.htmlParseListener.onText(data);
-            }
-          } catch (error: unknown) {
-            this.emit('error', error);
-          }
-        },
-      },
-      {
-        decodeEntities: true,
-        recognizeSelfClosing: true,
-        xmlMode,
-      },
-    );
-  }
-
+  /**
+   * Attempt to emit all pending itemrefs for the given reference.
+   * @param reference An item reference id.
+   * @param itemScopeDomain An optional item scope. If defined, only refs from this scope will be emitted.
+   */
   protected tryToEmitReferences(reference: string, itemScopeDomain?: IItemScope): void {
     const range = this.pendingItemRefsRangeFinalized[reference];
     if (range) {

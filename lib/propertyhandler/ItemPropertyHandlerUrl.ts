@@ -5,7 +5,7 @@ import type { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
 /**
- * An item property with a URL attribute.
+ * Handler for an item property with a URL attribute.
  */
 export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
   private readonly tagName: string;

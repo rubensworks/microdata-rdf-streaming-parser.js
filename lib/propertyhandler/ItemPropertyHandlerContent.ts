@@ -4,7 +4,7 @@ import type { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
 /**
- * An item property with the 'content' attribute.
+ * Handler for an item property with the 'content' attribute.
  */
 export class ItemPropertyHandlerContent implements IItemPropertyHandler {
   public canHandle(tagName: string, attributes: { [p: string]: string }): boolean {

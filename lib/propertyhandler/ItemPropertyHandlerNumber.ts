@@ -4,7 +4,7 @@ import { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
 /**
- * An item property with a number attribute.
+ * Handler for an item property with a number attribute.
  */
 export class ItemPropertyHandlerNumber implements IItemPropertyHandler {
   private readonly tagName: string;

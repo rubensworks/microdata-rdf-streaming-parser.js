@@ -1,3 +1,6 @@
+/**
+ * An HTML parser event.
+ */
 export type BufferedTagEvent = {
   type: 'close';
 } | {
