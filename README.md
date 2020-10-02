@@ -45,23 +45,34 @@ and outputs [RDFJS](http://rdf.js.org/)-compliant quads.
 It can be used to [`pipe`](https://nodejs.org/api/stream.html#stream_readable_pipe_destination_options) streams to,
 or you can write strings into the parser directly.
 
-TODO
-
 ## Configuration
 
 Optionally, the following parameters can be set in the `MicrodataRdfParser` constructor:
 
 * `dataFactory`: A custom [RDFJS DataFactory](http://rdf.js.org/#datafactory-interface) to construct terms and triples. _(Default: `require('@rdfjs/data-model')`)_
 * `baseIRI`: An initial default base IRI. _(Default: `''`)_
+* `defaultGraph`: The default graph for constructing [quads](http://rdf.js.org/#dom-datafactory-quad). _(Default: `defaultGraph()`)_
+* `htmlParseListener`: An optional listener for the internal HTML parse events, should implement [`IHtmlParseListener`](https://github.com/rubensworks/rdfa-streaming-parser.js/blob/master/lib/IHtmlParseListener.ts) _(Default: `null`)_
+* `xmlMode`: If the parser should assume strict X(HT)ML documents. _(Default: `false`)_
+* `vocabRegistry`: A vocabulary registry to define specific behaviour for given URI prefixes. _(Default: contents of http://www.w3.org/ns/md)_
 
 ```javascript
 new RdfaParser({
   dataFactory: require('@rdfjs/data-model'),
   baseIRI: 'http://example.org/',
+  defaultGraph: namedNode('http://example.org/graph'),
+  htmlParseListener: new MyHtmlListener(),
+  xmlMode: true,
+  vocabRegistry: {
+    "http://schema.org/": {
+      "properties": {
+        "additionalType": {"subPropertyOf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}
+      }
+    },
+    "http://microformats.org/profile/hcard": {}
+  },
 });
 ```
-
-TODO
 
 ## How it works
 
@@ -69,7 +80,8 @@ This tool makes use of the highly performant [htmlparser2](https://www.npmjs.com
 It listens to tag-events, and maintains the required tag metadata in a [stack-based datastructure](https://www.rubensworks.net/blog/2019/03/13/streaming-rdf-parsers/),
 which can then be emitted as triples as soon as possible.
 
-TODO
+Our algorithm closely resembles the [suggested algorithm for transforming Microdata to RDF](https://w3c.github.io/microdata-rdf/#algorithm),
+with a few changes to make it work in a streaming way.
 
 If you want to make use of a different HTML/XML parser,
 you can create a regular instance of `MicrodataRdfParser`,
