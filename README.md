@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/rubensworks/microdata-rdf-streaming-parser.js/badge.svg?branch=master)](https://coveralls.io/github/rubensworks/microdata-rdf-streaming-parser.js?branch=master)
 [![npm version](https://badge.fury.io/js/microdata-rdf-streaming-parser.svg)](https://www.npmjs.com/package/microdata-rdf-streaming-parser)
 
-A fast and lightweight _streaming_ and 100% _spec-compliant_ [Microdata to RDF](https://w3c.github.io/microdata-rdf/) parser,
+A [fast](https://gist.github.com/rubensworks/ec15c73fe042441d74e1ba6157ccc7bc) and lightweight _streaming_ and 100% _spec-compliant_ [Microdata to RDF](https://w3c.github.io/microdata-rdf/) parser,
 with [RDFJS](https://github.com/rdfjs/representation-task-force/) representations of RDF terms, quads and triples.
 
 The streaming nature allows triples to be emitted _as soon as possible_, and documents _larger than memory_ to be parsed.

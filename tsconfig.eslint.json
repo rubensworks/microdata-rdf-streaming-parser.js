@@ -3,6 +3,7 @@
   "include": [
     "index.ts",
     "lib/**/*.ts",
+    "perf/**/*.ts",
     "test/**/*.ts",
     "bin/**/*.ts"
   ],
