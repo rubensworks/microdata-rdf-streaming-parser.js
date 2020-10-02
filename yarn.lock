@@ -4547,10 +4547,10 @@ rdf-terms@^1.6.2:
     lodash.uniqwith "^4.5.0"
     rdf-data-factory "^1.0.1"
 
-rdf-test-suite@^1.13.4:
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/rdf-test-suite/-/rdf-test-suite-1.14.0.tgz#2031e04689186b6918abf57a70308129d1209566"
-  integrity sha512-DSrSAJbHZDmOnJOFa8jQCp4OSF1xz0DNleMl3R66qjYz/iyRp4r2rB6Z9zlaTuMB60ZDA5mQJzR3zW87xkAfBw==
+rdf-test-suite@^1.15.0:
+  version "1.15.0"
+  resolved "https://registry.yarnpkg.com/rdf-test-suite/-/rdf-test-suite-1.15.0.tgz#f18ec21ab873d3baf0a384635ba8d607bae14dee"
+  integrity sha512-2GnjI2UUju44ajA9iV6kYncD+/g9yxL/tzF1IpoOQq5KBEPKDjOh6KYWA+UwNmTIvyBcM4I1Py0hGSrp/u/6fA==
   dependencies:
     "@types/json-stable-stringify" "^1.0.32"
     "@types/log-symbols" "^3.0.0"
