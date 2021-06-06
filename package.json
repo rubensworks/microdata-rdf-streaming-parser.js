@@ -43,7 +43,7 @@
     "@types/rdf-js": "^4.0.0",
     "@types/jest": "^26.0.0",
     "@types/jest-each": "^24.3.0",
-    "@types/node": "^13.1.0",
+    "@types/node": "^14.0.0",
     "@typescript-eslint/eslint-plugin": "^4.2.0",
     "@typescript-eslint/parser": "^4.1.1",
     "arrayify-stream": "^1.0.0",
