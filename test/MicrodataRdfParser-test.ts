@@ -1,7 +1,7 @@
 import { PassThrough } from 'stream';
+import type * as RDF from '@rdfjs/types';
 import { DataFactory } from 'rdf-data-factory';
 import 'jest-rdf';
-import type * as RDF from 'rdf-js';
 import type { IHtmlParseListener } from '../lib/IHtmlParseListener';
 import { MicrodataRdfParser } from '../lib/MicrodataRdfParser';
 const arrayifyStream = require('arrayify-stream');

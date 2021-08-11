@@ -1,8 +1,8 @@
 import type { TransformCallback } from 'stream';
 import { PassThrough, Transform } from 'stream';
+import type * as RDF from '@rdfjs/types';
 import type { DomHandler } from 'domhandler';
 import { Parser as HtmlParser } from 'htmlparser2';
-import type * as RDF from 'rdf-js';
 import type { BufferedTagEvent } from './BufferedTagEvent';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import type { IItemScope } from './IItemScope';
@@ -284,7 +284,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
           // First check if we have a child item scope, otherwise get the text content
           // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
           const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
-          this.emitPredicateTriples(itemScope, <RDF.NamedNode[]> predicates, object, predicateKey === 'reverse');
+          this.emitPredicateTriples(itemScope, predicates, object, predicateKey === 'reverse');
           delete itemScope.predicates[depth][<'forward' | 'reverse'> predicateKey];
         }
       }
