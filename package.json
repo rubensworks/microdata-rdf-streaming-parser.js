@@ -54,15 +54,15 @@
     "eslint-plugin-jest": "^24.0.2",
     "eslint-plugin-tsdoc": "^0.2.7",
     "eslint-plugin-unused-imports": "^1.0.0",
-    "jest": "^26.0.0",
-    "jest-each": "^26.0.0",
+    "jest": "^27.0.0",
+    "jest-each": "^27.0.0",
     "jest-rdf": "^1.7.0",
     "manual-git-changelog": "^1.0.1",
     "pre-commit": "^1.2.2",
     "rdf-quad": "^1.5.0",
     "rdf-test-suite": "^1.15.0",
     "streamify-string": "^1.0.1",
-    "ts-jest": "^26.0.0",
+    "ts-jest": "^27.0.0",
     "typescript": "^4.3.5"
   },
   "jest": {
