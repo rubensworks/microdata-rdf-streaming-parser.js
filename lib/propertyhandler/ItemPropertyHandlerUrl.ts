@@ -16,11 +16,11 @@ export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
     this.attributeName = attributeName;
   }
 
-  public canHandle(tagName: string, attributes: { [p: string]: string }): boolean {
+  public canHandle(tagName: string, attributes: Record<string, string>): boolean {
     return this.tagName === tagName && this.attributeName in attributes;
   }
 
-  public getObject(attributes: { [p: string]: string }, util: Util, itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
     return util.dataFactory.namedNode(resolve(attributes[this.attributeName], util.baseIRI));
   }
 }

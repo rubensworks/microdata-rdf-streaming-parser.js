@@ -10,5 +10,13 @@ module.exports = {
     ],
     rules: {
         'no-implicit-coercion': 'off'
-    }
+    },
+    overrides: [
+        {
+            files: ['perf/*.ts'],
+            rules: {
+                'unicorn/filename-case': 'off'
+            }
+        }
+    ]
 };

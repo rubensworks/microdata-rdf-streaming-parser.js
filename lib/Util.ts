@@ -77,9 +77,9 @@ export class Util {
     if (itemScope.vocab && itemScope.vocab in vocabRegistry && vocabRegistry[itemScope.vocab].properties) {
       let predicates: RDF.NamedNode[] = [];
       for (const [ property, expansions ] of Object
-        .entries(<{[property: string]: {[name: string]: string}}> vocabRegistry[itemScope.vocab].properties)) {
+        .entries(vocabRegistry[itemScope.vocab].properties!)) {
         if (parts.includes(property)) {
-          predicates = predicates.concat(Object.values(expansions).map(iri => this.dataFactory.namedNode(iri)));
+          predicates = [ ...Object.values(expansions).map(iri => this.dataFactory.namedNode(iri)) ];
         }
       }
       return predicates;

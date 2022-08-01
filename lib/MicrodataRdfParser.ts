@@ -51,17 +51,17 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
 
   // Variables for managing itemrefs.
   private isEmittingReferences = false;
-  private readonly pendingItemRefsDomain: {[referenceId: string]: IItemScope[]} = {};
-  private readonly pendingItemRefsRangeFinalized: {[referenceId: string]: {
+  private readonly pendingItemRefsDomain: Record<string, IItemScope[]> = {};
+  private readonly pendingItemRefsRangeFinalized: Record<string, {
     events: BufferedTagEvent[];
     ids: RDF.Quad_Subject[];
-  };} = {};
+  }> = {};
   // eslint-disable-next-line lines-between-class-members
-  private readonly pendingItemRefsRangeCollecting: {[referenceId: string]: {
+  private readonly pendingItemRefsRangeCollecting: Record<string, {
     events: BufferedTagEvent[];
     counter: number;
     ids: RDF.Quad_Subject[];
-  };} = {};
+  }> = {};
   // eslint-disable-next-line lines-between-class-members
   private emittingReferencesItemScopeIdGenerator: (() => (RDF.NamedNode | RDF.BlankNode)) | undefined;
 
@@ -93,7 +93,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
   }
 
   public _transform(chunk: any, encoding: string, callback: TransformCallback): void {
-    this.parser.write(chunk);
+    this.parser.write(chunk.toString());
     callback();
   }
 
@@ -122,7 +122,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return this.itemScopeStack.length;
   }
 
-  public onTagOpen(name: string, attributes: {[s: string]: string}): void {
+  public onTagOpen(name: string, attributes: Record<string, string>): void {
     if (!this.isEmittingReferences) {
       // If the tag has an 'id', start collecting the whole stack in the item reference buffer
       if ('id' in attributes) {
@@ -142,7 +142,6 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     }
 
     // Ensure the text buffer stack is in line with the stack depth
-    // eslint-disable-next-line unicorn/no-useless-undefined
     this.textBufferStack.push(undefined);
     // Processing steps based on https://w3c.github.io/microdata-rdf/#rdf-conversion-algorithm
 
@@ -181,7 +180,6 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       // Determine the parent item scope
       itemScope = this.getItemScope();
       // 2. Push any changes to the item scope to the stack
-      // eslint-disable-next-line unicorn/no-useless-undefined
       this.itemScopeStack.push(undefined);
     }
 
@@ -216,16 +214,15 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       }
 
       // Handle itemrefs (only if we also had an itemscope)
-      if ('itemscope' in attributes) {
-        // If we have an itemref, store it in our domain buffer.
-        if (!this.isEmittingReferences && 'itemref' in attributes) {
-          for (const reference of attributes.itemref.split(/\s+/u)) {
-            if (!(reference in this.pendingItemRefsDomain)) {
-              this.pendingItemRefsDomain[reference] = [];
-            }
-            this.pendingItemRefsDomain[reference].push(itemScope);
-            this.tryToEmitReferences(reference, itemScope);
+      // If we have an itemref, store it in our domain buffer.
+      if ('itemscope' in attributes &&
+        !this.isEmittingReferences && 'itemref' in attributes) {
+        for (const reference of attributes.itemref.split(/\s+/u)) {
+          if (!(reference in this.pendingItemRefsDomain)) {
+            this.pendingItemRefsDomain[reference] = [];
           }
+          this.pendingItemRefsDomain[reference].push(itemScope);
+          this.tryToEmitReferences(reference, itemScope);
         }
       }
     }
@@ -283,7 +280,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         for (const [ predicateKey, predicates ] of Object.entries(itemScope.predicates[depth])) {
           // First check if we have a child item scope, otherwise get the text content
           // Safely cast textBufferStack, as it is always defined when itemScope.predicates is defined.
-          const object = this.util.createLiteral((<string[]> this.textBufferStack[depth]).join(''), itemScope);
+          const object = this.util.createLiteral(this.textBufferStack[depth]!.join(''), itemScope);
           this.emitPredicateTriples(itemScope, predicates, object, predicateKey === 'reverse');
           delete itemScope.predicates[depth][<'forward' | 'reverse'> predicateKey];
         }
@@ -326,7 +323,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
             this.emit('error', error);
           }
         },
-        onopentag: (name: string, attributes: {[s: string]: string}) => {
+        onopentag: (name: string, attributes: Record<string, string>) => {
           try {
             this.onTagOpen(name, attributes);
             if (this.htmlParseListener) {
@@ -368,7 +365,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     reverse: boolean,
     itemScope: IItemScope | undefined,
     tagName: string,
-    tagAttributes: {[s: string]: string},
+    tagAttributes: Record<string, string>,
   ): void {
     const parentItemScope = this.getItemScope(true);
     if (parentItemScope) {
@@ -490,7 +487,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         for (const itemScope of applicableItemScopes) {
           this.itemScopeStack = [ itemScope ];
           this.textBufferStack = [ undefined ];
-          const pendingIds = range.ids.slice();
+          const pendingIds = [ ...range.ids ];
           this.emittingReferencesItemScopeIdGenerator = () => <RDF.NamedNode | RDF.BlankNode> pendingIds.shift();
           for (const event of range.events) {
             switch (event.type) {

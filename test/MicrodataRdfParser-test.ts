@@ -1,10 +1,11 @@
 import { PassThrough } from 'stream';
 import type * as RDF from '@rdfjs/types';
+import arrayifyStream from 'arrayify-stream';
 import { DataFactory } from 'rdf-data-factory';
 import 'jest-rdf';
 import type { IHtmlParseListener } from '../lib/IHtmlParseListener';
 import { MicrodataRdfParser } from '../lib/MicrodataRdfParser';
-const arrayifyStream = require('arrayify-stream');
+
 const quad = require('rdf-quad');
 const streamifyString = require('streamify-string');
 

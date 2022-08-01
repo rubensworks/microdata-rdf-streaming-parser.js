@@ -6,7 +6,7 @@ export type BufferedTagEvent = {
 } | {
   type: 'open';
   name: string;
-  attributes: {[s: string]: string};
+  attributes: Record<string, string>;
 } | {
   type: 'text';
   data: string;

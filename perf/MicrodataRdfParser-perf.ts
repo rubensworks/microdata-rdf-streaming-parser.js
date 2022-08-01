@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-disable no-console,unicorn/filename-case */
+/* eslint-disable no-console */
 import { createReadStream } from 'fs';
 import { resolve } from 'path';
 import { MicrodataRdfParser } from '..';
@@ -29,5 +29,6 @@ createReadStream(fileName)
   .on('end', () => {
     console.timeEnd(TEST);
     console.log(`* Quads parsed: ${count}`);
-    console.log(`* Memory usage: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
+    console.log(`* Memory usage: ${Math.round(process.memoryUsage().rss / 1_024 / 1_024)}MB`);
   });
+/* eslint-enable no-console */
