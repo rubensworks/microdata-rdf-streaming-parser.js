@@ -20,7 +20,7 @@ export interface IItemScope {
    * A hash of (absolute) depth to predicates that are defined in this scope.
    * Both forward and reverse properties can be defined.
    */
-  predicates?: {[depth: number]: { forward?: RDF.NamedNode[]; reverse?: RDF.NamedNode[] }};
+  predicates?: Record<number, { forward?: RDF.NamedNode[]; reverse?: RDF.NamedNode[] }>;
   /**
    * If triples from this scope must NOT be emitted.
    */

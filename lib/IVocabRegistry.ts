@@ -4,8 +4,6 @@
  * @link https://w3c.github.io/microdata-rdf/#vocabulary-registry
  * @link https://www.w3.org/ns/md
  */
-export interface IVocabRegistry {
-  [uriPrefix: string]: {
-    properties?: {[property: string]: {[name: string]: string}};
-  };
-}
+export type IVocabRegistry = Record<string, {
+  properties?: Record<string, Record<string, string>>;
+}>;

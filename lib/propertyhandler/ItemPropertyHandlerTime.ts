@@ -22,15 +22,15 @@ export class ItemPropertyHandlerTime implements IItemPropertyHandler {
     { regex: /^\d+$/u, type: 'gYear' },
   ];
 
-  public canHandle(tagName: string, attributes: { [p: string]: string }): boolean {
+  public canHandle(tagName: string, attributes: Record<string, string>): boolean {
     return tagName === 'time' && 'datetime' in attributes;
   }
 
-  public getObject(attributes: { [p: string]: string }, util: Util, itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
     const value = attributes.datetime;
     let datatype: RDF.NamedNode | undefined;
     for (const entry of ItemPropertyHandlerTime.TIME_REGEXES) {
-      if (entry.regex.exec(value)) {
+      if (entry.regex.test(value)) {
         datatype = util.dataFactory.namedNode(Util.XSD + entry.type);
         break;
       }
