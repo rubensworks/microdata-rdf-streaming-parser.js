@@ -1,8 +1,7 @@
-import type { TransformCallback } from 'stream';
-import { PassThrough, Transform } from 'stream';
 import type * as RDF from '@rdfjs/types';
 import type { DomHandler } from 'domhandler';
 import { Parser as HtmlParser } from 'htmlparser2';
+import { PassThrough, Transform } from 'readable-stream';
 import type { BufferedTagEvent } from './BufferedTagEvent';
 import type { IHtmlParseListener } from './IHtmlParseListener';
 import type { IItemScope } from './IItemScope';
@@ -92,12 +91,12 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return parsed;
   }
 
-  public _transform(chunk: any, encoding: string, callback: TransformCallback): void {
+  public _transform(chunk: any, encoding: string, callback: (error?: Error | null, data?: any) => void): void {
     this.parser.write(chunk.toString());
     callback();
   }
 
-  public _flush(callback: TransformCallback): void {
+  public _flush(callback: (error?: Error | null, data?: any) => void): void {
     this.parser.end();
     callback();
   }
