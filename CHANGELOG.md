@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+<a name="v2.0.0"></a>
+## [v2.0.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v1.2.0...v2.0.0) - 2022-08-08
+
+This release has been marked as a major change due to the transition from Node's internal stream API to readable-stream. Most users should experience not breakages with this change.
+
+### Changed
+* [Move away from Node.js built-ins (#21)](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/99266f3d8e3612efb6df7551cce43db3f0b3eb08)
+* [Enable tree shacking](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/f835cb52f76363adf5f35948b7e603839a8f9290)
+
 <a name="v1.2.0"></a>
 ## [v1.2.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v1.1.0...v1.2.0) - 2021-08-11
 
