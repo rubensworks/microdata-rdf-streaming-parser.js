@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+<a name="v2.0.1"></a>
+## [v2.0.1](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v2.0.0...v2.0.1) - 2022-11-09
+
+### Fixed
+* [Include source map files in packed files](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/b3cf997e4d7cd46d2cfec94ceae15e011deb4f08)
+
 <a name="v2.0.0"></a>
 ## [v2.0.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v1.2.0...v2.0.0) - 2022-08-08
 
