@@ -42,7 +42,7 @@ export class Util {
    * @return {Term[]} The IRI terms.
    */
   public createVocabIris(terms: string, itemScope: IItemScope, allowRelativeIris: boolean): RDF.NamedNode[] {
-    return <RDF.NamedNode[]> terms.split(/\s+/u)
+    return terms.split(/\s+/u)
       .filter(term => !!term)
       .map(property => {
         if (!Util.isValidIri(property)) {
