@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+<a name="v3.0.0"></a>
+## [v3.0.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v2.0.1...v3.0.0) - 2025-01-08
+
+### BREAKING CHANGES
+* [Update to rdf-data-factory v2](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/bc4842bc508c66dcd4900114de8f1ceb08b0211e)
+    This includes a bump to @rdfjs/types@2.0.0, which requires TypeScript 5 and Node 14+
+
+### Changes
+* [Update dependency @types/readable-stream to v4](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/bc2fce70c62a06fafd51c10518ef18b599e97392)
+* [Update dependency htmlparser2 to v9 (#25)](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/9814fb1123b64aae232d1bf0db0ab6fad4ea51a8)
+* [Update dependency typescript to v5](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/926824dcc157a82947f3cd5018d137e3777fd230)
+
 <a name="v2.0.1"></a>
 ## [v2.0.1](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v2.0.0...v2.0.1) - 2022-11-09
 
