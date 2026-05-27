@@ -55,13 +55,11 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     events: BufferedTagEvent[];
     ids: RDF.Quad_Subject[];
   }> = {};
-  // eslint-disable-next-line lines-between-class-members
   private readonly pendingItemRefsRangeCollecting: Record<string, {
     events: BufferedTagEvent[];
     counter: number;
     ids: RDF.Quad_Subject[];
   }> = {};
-  // eslint-disable-next-line lines-between-class-members
   private emittingReferencesItemScopeIdGenerator: (() => (RDF.NamedNode | RDF.BlankNode)) | undefined;
 
   public constructor(options?: IMicrodataRdfParserOptions) {

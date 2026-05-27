@@ -44,16 +44,15 @@ export class Util {
   public createVocabIris(terms: string, itemScope: IItemScope, allowRelativeIris: boolean): RDF.NamedNode[] {
     return terms.split(/\s+/u)
       .filter(term => !!term)
-      .map(property => {
+      .flatMap(property => {
         if (!Util.isValidIri(property)) {
           if (!allowRelativeIris) {
-            return;
+            return [];
           }
           property = `${itemScope.vocab || `${this.baseIRI}#`}${property}`;
         }
-        return this.dataFactory.namedNode(property);
-      })
-      .filter(term => !!term);
+        return [ this.dataFactory.namedNode(property) ];
+      });
   }
 
   /**

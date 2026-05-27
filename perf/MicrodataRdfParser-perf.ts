@@ -18,7 +18,7 @@ console.time(TEST);
 let count = 0;
 createReadStream(fileName)
   .pipe(new MicrodataRdfParser(options))
-  .on('data', data => {
+  .on('data', _data => {
     // Console.log(JSON.stringify(require('rdf-string').quadToStringQuad(data))); // TODO
     count++;
   })

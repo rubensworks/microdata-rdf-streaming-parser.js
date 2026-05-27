@@ -26,7 +26,7 @@ export class ItemPropertyHandlerTime implements IItemPropertyHandler {
     return tagName === 'time' && 'datetime' in attributes;
   }
 
-  public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
     const value = attributes.datetime;
     let datatype: RDF.NamedNode | undefined;
     for (const entry of ItemPropertyHandlerTime.TIME_REGEXES) {
