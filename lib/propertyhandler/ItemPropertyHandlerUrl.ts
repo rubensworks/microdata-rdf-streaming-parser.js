@@ -27,9 +27,9 @@ export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
   }
 
   protected normalizeW3cGitHubUrl(attributeValue: string, baseIRI: string, resolved: string): string {
-    if (attributeValue.startsWith('/')
-      && baseIRI.startsWith('https://w3c.github.io/microdata-rdf/tests/')
-      && resolved.startsWith('https://w3c.github.io/')) {
+    if (attributeValue.startsWith('/') &&
+      baseIRI.startsWith('https://w3c.github.io/microdata-rdf/tests/') &&
+      resolved.startsWith('https://w3c.github.io/')) {
       return resolved.replace(/^https:/u, 'http:');
     }
     return resolved;
