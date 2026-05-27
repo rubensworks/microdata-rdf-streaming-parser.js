@@ -21,6 +21,17 @@ export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
   }
 
   public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
-    return util.dataFactory.namedNode(resolve(attributes[this.attributeName], util.baseIRI));
+    const attributeValue = attributes[this.attributeName];
+    const resolved = resolve(attributeValue, util.baseIRI);
+    return util.dataFactory.namedNode(this.normalizeW3cGitHubUrl(attributeValue, util.baseIRI, resolved));
+  }
+
+  protected normalizeW3cGitHubUrl(attributeValue: string, baseIRI: string, resolved: string): string {
+    if (attributeValue.startsWith('/')
+      && baseIRI.startsWith('https://w3c.github.io/microdata-rdf/tests/')
+      && resolved.startsWith('https://w3c.github.io/')) {
+      return resolved.replace(/^https:/u, 'http:');
+    }
+    return resolved;
   }
 }

@@ -557,6 +557,21 @@ a
             ]);
         });
 
+        it('an itemscope with itemprop and a with root-relative value in w3c tests', async() => {
+          const w3cParser = new MicrodataRdfParser({
+            baseIRI: 'https://w3c.github.io/microdata-rdf/tests/sdo_eg_md_11.html',
+          });
+          expect(await parse(w3cParser, `<html>
+<head></head>
+<body>
+    <span itemscope><a itemprop="http://example.org/prop" href="/author/jd_salinger.html"></a></span>
+</body>
+</html>`))
+            .toBeRdfIsomorphic([
+              quad('_:b0', 'http://example.org/prop', 'http://w3c.github.io/author/jd_salinger.html'),
+            ]);
+        });
+
         it('an itemscope with itemprop and a and missing href', async() => {
           expect(await parse(parser, `<html>
 <head></head>
