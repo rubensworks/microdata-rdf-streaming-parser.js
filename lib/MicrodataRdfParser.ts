@@ -12,14 +12,14 @@ import { ItemPropertyHandlerNumber } from './propertyhandler/ItemPropertyHandler
 import { ItemPropertyHandlerTime } from './propertyhandler/ItemPropertyHandlerTime';
 import { ItemPropertyHandlerUrl } from './propertyhandler/ItemPropertyHandlerUrl';
 import { Util } from './Util';
-import * as VOCAB_REGISTRY_DEFAULT from './vocab-registry-default.json';
+import vocabRegistryDefault from './vocabRegistryDefault';
 import EventEmitter = NodeJS.EventEmitter;
 
 /**
  * A stream transformer that parses Microdata (text) streams to an {@link RDF.Stream}.
  */
 export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitter, RDF.Stream> {
-  private static readonly ITEM_PROPERTY_HANDLERS: IItemPropertyHandler[] = [
+  private static readonly itemPropertyHandlers: IItemPropertyHandler[] = [
     new ItemPropertyHandlerContent(),
     new ItemPropertyHandlerUrl('a', 'href'),
     new ItemPropertyHandlerUrl('area', 'href'),
@@ -55,24 +55,29 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     events: BufferedTagEvent[];
     ids: RDF.Quad_Subject[];
   }> = {};
+
   private readonly pendingItemRefsRangeCollecting: Record<string, {
     events: BufferedTagEvent[];
     counter: number;
     ids: RDF.Quad_Subject[];
   }> = {};
+
   private emittingReferencesItemScopeIdGenerator: (() => (RDF.NamedNode | RDF.BlankNode)) | undefined;
 
   public constructor(options?: IMicrodataRdfParserOptions) {
     super({ readableObjectMode: true });
-    options = options || {};
-    this.options = options;
+    const resolvedOptions: IMicrodataRdfParserOptions & { vocabRegistry: IVocabRegistry } = {
+      vocabRegistry: vocabRegistryDefault,
+      ...options,
+    };
+    this.options = resolvedOptions;
 
-    this.util = new Util(options.dataFactory, options.baseIRI);
-    this.defaultGraph = options.defaultGraph || this.util.dataFactory.defaultGraph();
-    this.htmlParseListener = options.htmlParseListener;
-    this.vocabRegistry = options.vocabRegistry || VOCAB_REGISTRY_DEFAULT;
+    this.util = new Util(resolvedOptions.dataFactory, resolvedOptions.baseIRI);
+    this.defaultGraph = resolvedOptions.defaultGraph ?? this.util.dataFactory.defaultGraph();
+    this.htmlParseListener = resolvedOptions.htmlParseListener;
+    this.vocabRegistry = resolvedOptions.vocabRegistry;
 
-    this.parser = this.initializeParser(!!options.xmlMode);
+    this.parser = this.initializeParser(!!resolvedOptions.xmlMode);
   }
 
   /**
@@ -89,12 +94,18 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return parsed;
   }
 
-  public _transform(chunk: any, encoding: string, callback: (error?: Error | null, data?: any) => void): void {
-    this.parser.write(chunk.toString());
+  public ['_transform'](
+    chunk: string | Buffer,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    void encoding;
+    const data = chunk.toString();
+    this.parser.write(data);
     callback();
   }
 
-  public _flush(callback: (error?: Error | null, data?: any) => void): void {
+  public ['_flush'](callback: (error?: Error | null) => void): void {
     this.parser.end();
     callback();
   }
@@ -150,8 +161,11 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
       if (this.emittingReferencesItemScopeIdGenerator) {
         subject = this.emittingReferencesItemScopeIdGenerator();
       } else {
-        subject = 'itemid' in attributes && this.util.createSubject(attributes.itemid) ||
-          this.util.dataFactory.blankNode();
+        if ('itemid' in attributes) {
+          subject = this.util.createSubject(attributes.itemid) ?? this.util.dataFactory.blankNode();
+        } else {
+          subject = this.util.dataFactory.blankNode();
+        }
 
         // Store the genererated id in all collecting item reference buffers
         for (const buffer of Object.values(this.pendingItemRefsRangeCollecting)) {
@@ -195,7 +209,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
           if (!itemScope.blockEmission) {
             this.emitTriple(
               itemScope.subject,
-              this.util.dataFactory.namedNode(`${Util.RDF}type`),
+              this.util.dataFactory.namedNode(`${Util.rdf}type`),
               type,
             );
           }
@@ -395,7 +409,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
         // Finalize the predicates, so text values do not apply to them.
         delete parentItemScope.predicates[depth][predicatesKey];
       } else {
-        for (const handler of MicrodataRdfParser.ITEM_PROPERTY_HANDLERS) {
+        for (const handler of MicrodataRdfParser.itemPropertyHandlers) {
           if (handler.canHandle(tagName, tagAttributes)) {
             const object = handler.getObject(tagAttributes, this.util, parentItemScope);
             this.emitPredicateTriples(parentItemScope, predicates, object, reverse);

@@ -9,7 +9,7 @@ describe('Util', () => {
     const instance = new Util(undefined, undefined);
     expect(instance).toBeInstanceOf(Util);
     expect((<any> instance).dataFactory).toBeInstanceOf(DataFactory);
-    expect((<any> instance).baseIRI).toEqual('');
+    expect((<any> instance).baseIRI).toBe('');
   });
 
   it('should be constructable with non-null dataFactory and non-null baseIRI', () => {
@@ -17,7 +17,7 @@ describe('Util', () => {
     const instance = new Util(dataFactory, 'abc');
     expect(instance).toBeInstanceOf(Util);
     expect((<any> instance).dataFactory).toBe(dataFactory);
-    expect((<any> instance).baseIRI).toEqual('abc');
+    expect((<any> instance).baseIRI).toBe('abc');
   });
 
   describe('#isValidIri', () => {
@@ -44,26 +44,26 @@ describe('Util', () => {
     describe('#deriveVocab', () => {
       it('should remove everything after the hash for an empty registry', async() => {
         expect(util.deriveVocab('http://ex.org/a/b/c#xyz', {}))
-          .toEqual('http://ex.org/a/b/c#');
+          .toBe('http://ex.org/a/b/c#');
       });
 
       it('should remove the last path segment for an empty registry', async() => {
         expect(util.deriveVocab('http://ex.org/a/b/c', {}))
-          .toEqual('http://ex.org/a/b/');
+          .toBe('http://ex.org/a/b/');
         expect(util.deriveVocab('http://ex.org/a/b/c/', {}))
-          .toEqual('http://ex.org/a/b/c/');
+          .toBe('http://ex.org/a/b/c/');
       });
 
       it('should reuse prefixes ending in a slash', async() => {
         expect(util.deriveVocab('http://ex.org/a/b/c#xyz', {
           'http://ex.org/': {},
-        })).toEqual('http://ex.org/');
+        })).toBe('http://ex.org/');
       });
 
       it('should reuse prefixes not ending in a slash, and append a fragment', async() => {
         expect(util.deriveVocab('http://ex.org/value/b/c#xyz', {
           'http://ex.org/value': {},
-        })).toEqual('http://ex.org/value#');
+        })).toBe('http://ex.org/value#');
       });
     });
   });
