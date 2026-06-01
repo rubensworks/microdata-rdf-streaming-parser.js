@@ -19,6 +19,7 @@ export class ItemPropertyHandlerNumber implements IItemPropertyHandler {
     return this.tagName === tagName && this.attributeName in attributes;
   }
 
+  // eslint-disable-next-line ts/naming-convention
   public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
     const value = attributes[this.attributeName];
     let datatype: string | undefined;

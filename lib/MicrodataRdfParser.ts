@@ -94,6 +94,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return parsed;
   }
 
+  /* eslint-disable ts/naming-convention */
   public _transform(
     chunk: string | Buffer,
     _encoding: BufferEncoding,
@@ -107,6 +108,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     this.parser.end();
     callback();
   }
+  /* eslint-enable ts/naming-convention */
 
   /**
    * Get the current item scope for the current depth.
