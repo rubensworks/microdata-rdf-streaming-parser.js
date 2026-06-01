@@ -19,14 +19,13 @@ export class ItemPropertyHandlerNumber implements IItemPropertyHandler {
     return this.tagName === tagName && this.attributeName in attributes;
   }
 
-  public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
-    void itemScope;
+  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
     const value = attributes[this.attributeName];
     let datatype: string | undefined;
     if (!Number.isNaN(Number.parseInt(value, 10)) && !value.includes('.')) {
-      datatype = `${Util.xsd}integer`;
+      datatype = `${Util.XSD}integer`;
     } else if (!Number.isNaN(Number.parseFloat(value))) {
-      datatype = `${Util.xsd}double`;
+      datatype = `${Util.XSD}double`;
     }
     return util.dataFactory.literal(value, datatype && util.dataFactory.namedNode(datatype));
   }

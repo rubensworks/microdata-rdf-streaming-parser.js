@@ -1,27 +1,28 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
+import { createReadStream } from 'fs';
+import { resolve } from 'path';
 import { MicrodataRdfParser } from '..';
 
-if (process.argv.length > 3) {
-  console.error('Usage: MicrodataRdfParser-perf.js [file] < input.html');
+if (process.argv.length !== 3) {
+  console.error('Usage: MicrodataRdfParser-perf.js filename');
   process.exit(1);
 }
 
-const fileName = process.argv[2];
-const baseIRI = fileName ? new URL(fileName, `file://${process.cwd()}/`).href : undefined;
-const options = baseIRI ? { baseIRI } : {};
+const fileName = resolve(process.cwd(), process.argv[2]);
+const options = { baseIRI: `file://${fileName}` };
 
-const TEST = baseIRI ? `- Parsing stream ${baseIRI}` : '- Parsing stream';
+const TEST = `- Parsing file ${fileName}`;
 console.time(TEST);
 
 let count = 0;
-process.stdin
+createReadStream(fileName)
   .pipe(new MicrodataRdfParser(options))
-  .on('data', () => {
+  .on('data', _data => {
     // Console.log(JSON.stringify(require('rdf-string').quadToStringQuad(data))); // TODO
     count++;
   })
-  .on('error', (error) => {
+  .on('error', error => {
     console.error(error);
     process.exit(1);
   })

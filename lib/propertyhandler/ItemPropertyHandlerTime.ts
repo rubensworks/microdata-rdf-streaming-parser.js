@@ -7,7 +7,7 @@ import type { IItemPropertyHandler } from './IItemPropertyHandler';
  * Handler for an item property for time tags.
  */
 export class ItemPropertyHandlerTime implements IItemPropertyHandler {
-  private static readonly timeRegexes: { regex: RegExp; type: string }[] = [
+  private static readonly TIME_REGEXES: { regex: RegExp; type: string }[] = [
     {
       regex: /^-?P(\d+Y)?(\d+M)?(\d+D)?(T(\d+H)?(\d+M)?(\d+(\.\d)?S)?)?$/u,
       type: 'duration',
@@ -26,13 +26,12 @@ export class ItemPropertyHandlerTime implements IItemPropertyHandler {
     return tagName === 'time' && 'datetime' in attributes;
   }
 
-  public getObject(attributes: Record<string, string>, util: Util, itemScope: IItemScope): RDF.Quad_Object {
-    void itemScope;
+  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
     const value = attributes.datetime;
     let datatype: RDF.NamedNode | undefined;
-    for (const entry of ItemPropertyHandlerTime.timeRegexes) {
+    for (const entry of ItemPropertyHandlerTime.TIME_REGEXES) {
       if (entry.regex.test(value)) {
-        datatype = util.dataFactory.namedNode(Util.xsd + entry.type);
+        datatype = util.dataFactory.namedNode(Util.XSD + entry.type);
         break;
       }
     }

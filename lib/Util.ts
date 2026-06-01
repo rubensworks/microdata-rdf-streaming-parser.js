@@ -8,9 +8,12 @@ import type { IVocabRegistry } from './IVocabRegistry';
  * A collection of utility functions.
  */
 export class Util {
-  public static readonly rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-  public static readonly xsd = 'http://www.w3.org/2001/XMLSchema#';
-  public static readonly rdfa = 'http://www.w3.org/ns/rdfa#';
+  // eslint-disable-next-line ts/naming-convention
+  public static readonly RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+  // eslint-disable-next-line ts/naming-convention
+  public static readonly XSD = 'http://www.w3.org/2001/XMLSchema#';
+  // eslint-disable-next-line ts/naming-convention
+  public static readonly RDFA = 'http://www.w3.org/ns/rdfa#';
 
   private static readonly iriRegex: RegExp = /^([A-Za-z][\d+-.A-Za-z]*|_):[^ "<>[\\\]`{|}]*$/u;
 
@@ -69,7 +72,7 @@ export class Util {
     // Check the presence of subPropertyOf or equivalentProperty
     const parts = terms.split(/\s+/u);
     if (parts.includes('subPropertyOf') || parts.includes('equivalentProperty')) {
-      return [ this.dataFactory.namedNode(`${Util.rdf}type`) ];
+      return [ this.dataFactory.namedNode(`${Util.RDF}type`) ];
     }
 
     // Check in the item scope's vocab

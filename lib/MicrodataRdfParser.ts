@@ -94,18 +94,16 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return parsed;
   }
 
-  public ['_transform'](
+  public _transform(
     chunk: string | Buffer,
-    encoding: BufferEncoding,
+    _encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
-    void encoding;
-    const data = chunk.toString();
-    this.parser.write(data);
+    this.parser.write(chunk.toString());
     callback();
   }
 
-  public ['_flush'](callback: (error?: Error | null) => void): void {
+  public _flush(callback: (error?: Error | null) => void): void {
     this.parser.end();
     callback();
   }
@@ -209,7 +207,7 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
           if (!itemScope.blockEmission) {
             this.emitTriple(
               itemScope.subject,
-              this.util.dataFactory.namedNode(`${Util.rdf}type`),
+              this.util.dataFactory.namedNode(`${Util.RDF}type`),
               type,
             );
           }
