@@ -29,11 +29,7 @@ module.exports = config([
   {
     files: [ 'perf/**/*.ts' ],
     rules: {
-      'import/no-nodejs-modules': 'off',
-      'style/arrow-parens': 'off',
-      'ts/naming-convention': 'off',
       'unicorn/filename-case': 'off',
-      'unicorn/prefer-node-protocol': 'off',
     },
   },
 ]);
