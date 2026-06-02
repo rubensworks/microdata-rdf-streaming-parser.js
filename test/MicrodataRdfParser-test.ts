@@ -1,5 +1,5 @@
 import type * as RDF from '@rdfjs/types';
-import arrayifyStream from 'arrayify-stream';
+import { arrayifyStream } from 'arrayify-stream';
 import { DataFactory } from 'rdf-data-factory';
 import { PassThrough } from 'readable-stream';
 import 'jest-rdf';
