@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-import { createReadStream } from 'fs';
-import { resolve } from 'path';
+// eslint-disable-next-line import/no-nodejs-modules
+import { createReadStream } from 'node:fs';
+
+// eslint-disable-next-line import/no-nodejs-modules
+import { resolve } from 'node:path';
 import { MicrodataRdfParser } from '..';
 
 if (process.argv.length !== 3) {
@@ -18,11 +21,11 @@ console.time(TEST);
 let count = 0;
 createReadStream(fileName)
   .pipe(new MicrodataRdfParser(options))
-  .on('data', data => {
+  .on('data', () => {
     // Console.log(JSON.stringify(require('rdf-string').quadToStringQuad(data))); // TODO
     count++;
   })
-  .on('error', error => {
+  .on('error', (error) => {
     console.error(error);
     process.exit(1);
   })

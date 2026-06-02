@@ -8,18 +8,21 @@ import type { IVocabRegistry } from './IVocabRegistry';
  * A collection of utility functions.
  */
 export class Util {
+  // eslint-disable-next-line ts/naming-convention
   public static readonly RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+  // eslint-disable-next-line ts/naming-convention
   public static readonly XSD = 'http://www.w3.org/2001/XMLSchema#';
+  // eslint-disable-next-line ts/naming-convention
   public static readonly RDFA = 'http://www.w3.org/ns/rdfa#';
 
-  private static readonly IRI_REGEX: RegExp = /^([A-Za-z][\d+-.A-Za-z]*|_):[^ "<>[\\\]`{|}]*$/u;
+  private static readonly iriRegex: RegExp = /^([A-Za-z][\d+-.A-Za-z]*|_):[^ "<>[\\\]`{|}]*$/u;
 
   public readonly dataFactory: RDF.DataFactory;
   public baseIRI: string;
 
   public constructor(dataFactory?: RDF.DataFactory, baseIRI?: string) {
-    this.dataFactory = dataFactory || new DataFactory();
-    this.baseIRI = baseIRI || '';
+    this.dataFactory = dataFactory ?? new DataFactory();
+    this.baseIRI = baseIRI ?? '';
   }
 
   /**
@@ -28,7 +31,7 @@ export class Util {
    * @return {boolean} If the given IRI is valid.
    */
   public static isValidIri(iri: string): boolean {
-    return Util.IRI_REGEX.test(iri);
+    return Util.iriRegex.test(iri);
   }
 
   /**
@@ -44,16 +47,15 @@ export class Util {
   public createVocabIris(terms: string, itemScope: IItemScope, allowRelativeIris: boolean): RDF.NamedNode[] {
     return terms.split(/\s+/u)
       .filter(term => !!term)
-      .map(property => {
+      .flatMap((property) => {
         if (!Util.isValidIri(property)) {
           if (!allowRelativeIris) {
-            return;
+            return [];
           }
-          property = `${itemScope.vocab || `${this.baseIRI}#`}${property}`;
+          property = `${itemScope.vocab ?? `${this.baseIRI}#`}${property}`;
         }
-        return this.dataFactory.namedNode(property);
-      })
-      .filter(term => !!term);
+        return [ this.dataFactory.namedNode(property) ];
+      });
   }
 
   /**
@@ -79,7 +81,7 @@ export class Util {
       for (const [ property, expansions ] of Object
         .entries(vocabRegistry[itemScope.vocab].properties!)) {
         if (parts.includes(property)) {
-          predicates = [ ...Object.values(expansions).map(iri => this.dataFactory.namedNode(iri)) ];
+          predicates = Object.values(expansions).map(iri => this.dataFactory.namedNode(iri));
         }
       }
       return predicates;
