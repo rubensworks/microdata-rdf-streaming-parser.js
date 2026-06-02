@@ -1,5 +1,4 @@
 import type * as RDF from '@rdfjs/types';
-import type { IItemScope } from '../IItemScope';
 import { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
@@ -26,8 +25,7 @@ export class ItemPropertyHandlerTime implements IItemPropertyHandler {
     return tagName === 'time' && 'datetime' in attributes;
   }
 
-  // eslint-disable-next-line ts/naming-convention
-  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util): RDF.Quad_Object {
     const value = attributes.datetime;
     let datatype: RDF.NamedNode | undefined;
     for (const entry of ItemPropertyHandlerTime.timeRegexes) {

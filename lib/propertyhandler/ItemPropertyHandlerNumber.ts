@@ -1,5 +1,4 @@
 import type * as RDF from '@rdfjs/types';
-import type { IItemScope } from '../IItemScope';
 import { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
@@ -19,8 +18,7 @@ export class ItemPropertyHandlerNumber implements IItemPropertyHandler {
     return this.tagName === tagName && this.attributeName in attributes;
   }
 
-  // eslint-disable-next-line ts/naming-convention
-  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util): RDF.Quad_Object {
     const value = attributes[this.attributeName];
     let datatype: string | undefined;
     if (!Number.isNaN(Number.parseInt(value, 10)) && !value.includes('.')) {

@@ -12,7 +12,9 @@ import { ItemPropertyHandlerNumber } from './propertyhandler/ItemPropertyHandler
 import { ItemPropertyHandlerTime } from './propertyhandler/ItemPropertyHandlerTime';
 import { ItemPropertyHandlerUrl } from './propertyhandler/ItemPropertyHandlerUrl';
 import { Util } from './Util';
-import vocabRegistryDefault from './vocabRegistryDefault';
+
+// eslint-disable-next-line import/extensions
+import vocabRegistryDefault from './vocab-registry-default.json';
 import EventEmitter = NodeJS.EventEmitter;
 
 /**
@@ -94,21 +96,21 @@ export class MicrodataRdfParser extends Transform implements RDF.Sink<EventEmitt
     return parsed;
   }
 
-  /* eslint-disable ts/naming-convention */
+  // eslint-disable-next-line ts/naming-convention
   public _transform(
     chunk: string | Buffer,
-    _encoding: BufferEncoding,
+    encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
     this.parser.write(chunk.toString());
     callback();
   }
 
+  // eslint-disable-next-line ts/naming-convention
   public _flush(callback: (error?: Error | null) => void): void {
     this.parser.end();
     callback();
   }
-  /* eslint-enable ts/naming-convention */
 
   /**
    * Get the current item scope for the current depth.

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
+// eslint-disable-next-line import/no-nodejs-modules
 import { createReadStream } from 'node:fs';
+
+// eslint-disable-next-line import/no-nodejs-modules
 import { resolve } from 'node:path';
 import { MicrodataRdfParser } from '..';
 
@@ -18,7 +21,7 @@ console.time(TEST);
 let count = 0;
 createReadStream(fileName)
   .pipe(new MicrodataRdfParser(options))
-  .on('data', (data) => {
+  .on('data', () => {
     // Console.log(JSON.stringify(require('rdf-string').quadToStringQuad(data))); // TODO
     count++;
   })

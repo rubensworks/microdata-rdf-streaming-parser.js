@@ -1,6 +1,5 @@
 import type * as RDF from '@rdfjs/types';
 import { resolve } from 'relative-to-absolute-iri';
-import type { IItemScope } from '../IItemScope';
 import type { Util } from '../Util';
 import type { IItemPropertyHandler } from './IItemPropertyHandler';
 
@@ -20,8 +19,7 @@ export class ItemPropertyHandlerUrl implements IItemPropertyHandler {
     return this.tagName === tagName && this.attributeName in attributes;
   }
 
-  // eslint-disable-next-line ts/naming-convention
-  public getObject(attributes: Record<string, string>, util: Util, _itemScope: IItemScope): RDF.Quad_Object {
+  public getObject(attributes: Record<string, string>, util: Util): RDF.Quad_Object {
     return util.dataFactory.namedNode(resolve(attributes[this.attributeName], util.baseIRI));
   }
 }
