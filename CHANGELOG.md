@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+<a name="v3.1.0"></a>
+## [v3.1.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v3.0.0...v3.1.0) - 2026-11-07
+
+### Changed
+* [Update dependency htmlparser2 to v10 (#48)](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/commit/0cc3fa8c62ac8346b1aad00021c808937b182d1b)
+
 <a name="v3.0.0"></a>
 ## [v3.0.0](https://github.com/rubensworks/microdata-rdf-streaming-parser.js/compare/v2.0.1...v3.0.0) - 2025-01-08
 
